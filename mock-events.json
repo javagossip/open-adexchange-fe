@@ -1,0 +1,33 @@
+{
+    "id": "b8e0c1a2-d3e4-5f67-8901-23456789abcd",
+    "businessType": "BudgetTransaction",
+    "data": {
+        "id": "b8e0c1a2-d3e4-5f67-8901-23456789abcd",
+        "accountId": "f21cd65d-bcb0-4b7c-831a-62afc3205050",
+        "budgetId": "8ecc93c1-8ea1-45ed-8cb8-e3d2e8d3cd82",
+        "cardId": "485d7d28-8e15-4f10-8b0d-3d04e69c2ff4",
+        "amount": 11.5,
+        "fee": 0,
+        "type": "Consumption",
+        "status": "Pending",
+        "transactionTime": "2025-07-17T06:02:13.544Z"
+    },
+    "sign": "1234567890-budget-consumption"
+},
+
+{
+    "id": "aab22ee3-1af6-4538-b5c1-c27f2adddda2",
+    "businessType": "BudgetTransaction",
+    "data": {
+        "id": "aab22ee3-1af6-4538-b5c1-c27f2adddda2",
+        "accountId": "f21cd65d-bcb0-4b7c-831a-62afc3205050",
+        "budgetId": "8ecc93c1-8ea1-45ed-8cb8-e3d2e8d3cd82",
+        "cardId": "485d7d28-8e15-4f10-8b0d-3d04e69c2ff4",
+        "amount": 0,
+        "fee": 0.5,
+        "type": "Fee_Consumption",
+        "status": "Closed",
+        "transactionTime": "2025-07-17T05:54:53.045Z"
+    },
+    "sign": "1234567890-budget-fee-consumption"
+}
