@@ -3,7 +3,7 @@ import path from 'path';
 import createVitePlugins from './vite/plugins';
 import pkg from './package.json'; // <--- 新增这一行
 
-const baseUrl = 'http://localhost:10080'; // 后端接口
+const baseUrl = 'http://localhost:9090'; // 后端接口
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, command }) => {
