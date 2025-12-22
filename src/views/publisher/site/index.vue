@@ -27,6 +27,18 @@
           <el-option label="App" :value="2" />
         </el-select>
       </el-form-item>
+      <el-form-item label="平台" prop="platform">
+        <el-select
+          v-model="queryParams.platform"
+          placeholder="平台"
+          clearable
+          style="width: 240px"
+        >
+          <el-option label="iOS" value="IOS" />
+          <el-option label="Android" value="ANDROID" />
+          <el-option label="Web" value="WEB" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="发布商" prop="publisherId">
         <el-select
           v-model="queryParams.publisherId"
@@ -105,6 +117,11 @@
       <el-table-column label="站点类型" align="center" prop="siteType" width="100">
         <template #default="scope">
           <span>{{ scope.row.siteType === 1 ? '网站' : 'App' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="平台" align="center" prop="platform" width="100">
+        <template #default="scope">
+          <span>{{ getPlatformLabel(scope.row.platform) }}</span>
         </template>
       </el-table-column>
       <el-table-column
@@ -226,6 +243,13 @@
             <el-radio :value="2">App</el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item label="平台" prop="platform">
+          <el-radio-group v-model="form.platform">
+            <el-radio value="ios" :disabled="form.siteType === 1">iOS</el-radio>
+            <el-radio value="android" :disabled="form.siteType === 1">Android</el-radio>
+            <el-radio value="web">Web</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item
           v-if="form.siteType === 1"
           label="域名"
@@ -301,11 +325,13 @@ const data = reactive({
     type: undefined,
     status: undefined,
     publisherId: undefined,
+    platform: undefined,
   },
   rules: {
     publisherId: [{ required: true, message: '发布商不能为空', trigger: 'change' }],
     name: [{ required: true, message: '站点名称不能为空', trigger: 'blur' }],
     siteType: [{ required: true, message: '站点类型不能为空', trigger: 'change' }],
+    platform: [{ required: true, message: '平台不能为空', trigger: 'change' }],
     domain: [{ required: true, message: '域名不能为空', trigger: 'blur' }],
     appId: [{ required: true, message: 'App ID不能为空', trigger: 'blur' }],
     appBundle: [{ required: true, message: 'App Bundle不能为空', trigger: 'blur' }],
@@ -334,6 +360,17 @@ function getPublisherList() {
 function getPublisherName(publisherId) {
   const publisher = publisherOptions.value.find((p) => p.id === publisherId);
   return publisher ? publisher.name : '-';
+}
+
+/** 获取平台展示文本 */
+function getPlatformLabel(platform) {
+  if (!platform) return '-';
+  const map = {
+    ios: 'iOS',
+    android: 'Android',
+    web: 'Web',
+  };
+  return map[platform] || platform;
 }
 
 /** 查询站点列表 */
@@ -377,6 +414,7 @@ function reset() {
     publisherId: undefined,
     name: undefined,
     siteType: 1,
+    platform: 'web',
     domain: undefined,
     appId: undefined,
     appBundle: undefined,
@@ -389,10 +427,16 @@ function reset() {
 function handleSiteTypeChange() {
   // 切换类型时清空相关字段
   if (form.value.siteType === 1) {
+    // 网站默认使用 web 平台
+    form.value.platform = 'web';
     form.value.appId = undefined;
     form.value.appBundle = undefined;
   } else {
     form.value.domain = undefined;
+    // 切换为 App 时如果之前是 web 平台，清空平台字段，让用户重新选择
+    if (form.value.platform === 'web') {
+      form.value.platform = undefined;
+    }
   }
 }
 
@@ -428,6 +472,12 @@ function handleUpdate(row) {
   const id = row.id || ids.value[0];
   getSite(id).then((response) => {
     form.value = response.data || response;
+    // 兼容老数据：如果没有平台字段，根据站点类型设置默认平台
+    if (!form.value.platform) {
+      if (form.value.siteType === 1) {
+        form.value.platform = 'web';
+      }
+    }
     open.value = true;
     title.value = '修改站点';
   });

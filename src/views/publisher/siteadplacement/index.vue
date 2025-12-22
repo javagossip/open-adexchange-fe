@@ -5,16 +5,39 @@
       ref="queryRef"
       :inline="true"
       v-show="showSearch"
-      label-width="80px"
+      label-width="100px"
     >
-      <el-form-item label="媒体名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          placeholder="请输入媒体名称"
+      <el-form-item label="站点" prop="siteId">
+        <el-select
+          v-model="queryParams.siteId"
+          placeholder="请选择站点"
           clearable
+          filterable
           style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+        >
+          <el-option
+            v-for="site in siteOptions"
+            :key="site.id"
+            :label="site.name"
+            :value="site.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="广告位" prop="adPlacementId">
+        <el-select
+          v-model="queryParams.adPlacementId"
+          placeholder="请选择广告位"
+          clearable
+          filterable
+          style="width: 240px"
+        >
+          <el-option
+            v-for="adPlacement in adPlacementOptions"
+            :key="adPlacement.id"
+            :label="adPlacement.name"
+            :value="adPlacement.id"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select
@@ -24,7 +47,7 @@
           style="width: 240px"
         >
           <el-option label="使用中" :value="1" />
-          <el-option label="停用" :value="0" />
+          <el-option label="禁用" :value="0" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -66,38 +89,54 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="publisherList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="siteAdPlacementList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="id" width="80" />
       <el-table-column
-        label="媒体名称"
+        label="媒体广告位名称"
         align="center"
         prop="name"
         :show-overflow-tooltip="true"
       />
       <el-table-column
-        label="媒体编码"
+        label="站点"
         align="center"
-        prop="code"
+        prop="siteId"
         width="150"
         :show-overflow-tooltip="true"
-      />
+      >
+        <template #default="scope">
+          <span>{{ getSiteName(scope.row.siteId) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column
-        label="联系人邮箱"
+        label="广告位"
         align="center"
-        prop="contactEmail"
+        prop="adPlacementId"
+        width="150"
         :show-overflow-tooltip="true"
-      />
+      >
+        <template #default="scope">
+          <span>{{ getAdPlacementName(scope.row.adPlacementId) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column
-        label="联系人电话"
+        label="截图URL"
         align="center"
-        prop="contactPhone"
+        prop="demoUrl"
         :show-overflow-tooltip="true"
-      />
+      >
+        <template #default="scope">
+          <el-link v-if="scope.row.demoUrl" :href="scope.row.demoUrl" target="_blank" type="primary">
+            查看截图
+          </el-link>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" align="center" prop="status" width="100">
         <template #default="scope">
           <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-            {{ scope.row.status === 1 ? '使用中' : '停用' }}
+            {{ scope.row.status === 1 ? '使用中' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
@@ -155,30 +194,52 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改发布商对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
-      <el-form ref="publisherRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="媒体名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入媒体名称" />
+    <!-- 添加或修改媒体广告位对话框 -->
+    <el-dialog :title="title" v-model="open" width="700px" append-to-body>
+      <el-form ref="siteAdPlacementRef" :model="form" :rules="rules" label-width="120px">
+        <el-form-item label="站点" prop="siteId">
+          <el-select
+            v-model="form.siteId"
+            placeholder="请选择站点"
+            filterable
+            style="width: 100%"
+          >
+            <el-option
+              v-for="site in siteOptions"
+              :key="site.id"
+              :label="site.name"
+              :value="site.id"
+            />
+          </el-select>
         </el-form-item>
-        <el-form-item label="联系人邮箱" prop="contactEmail">
-          <el-input v-model="form.contactEmail" placeholder="请输入联系人邮箱" />
+        <el-form-item label="广告位" prop="adPlacementId">
+          <el-select
+            v-model="form.adPlacementId"
+            placeholder="请选择广告位"
+            filterable
+            style="width: 100%"
+          >
+            <el-option
+              v-for="adPlacement in adPlacementOptions"
+              :key="adPlacement.id"
+              :label="adPlacement.name"
+              :value="adPlacement.id"
+            />
+          </el-select>
         </el-form-item>
-        <el-form-item label="联系人电话" prop="contactPhone">
-          <el-input v-model="form.contactPhone" placeholder="请输入联系人电话" />
+        <el-form-item label="媒体广告位名称" prop="name">
+          <el-input v-model="form.name" placeholder="请输入媒体广告位名称" />
         </el-form-item>
-        <el-form-item label="登录密码" prop="password" v-if="!form.id">
+        <el-form-item label="广告位截图URL" prop="demoUrl">
           <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="请输入登录密码"
-            show-password
+            v-model="form.demoUrl"
+            placeholder="请输入广告位截图URL"
           />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
             <el-radio :value="1">使用中</el-radio>
-            <el-radio :value="0">停用</el-radio>
+            <el-radio :value="0">禁用</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
@@ -192,20 +253,24 @@
   </div>
 </template>
 
-<script setup name="Publisher">
+<script setup name="SiteAdPlacement">
 import {
-  listPublisher,
-  getPublisher,
-  delPublisher,
-  addPublisher,
-  updatePublisher,
-  enablePublisher,
-  disablePublisher,
-} from '@/api/publisher/publisher';
+  listSiteAdPlacement,
+  getSiteAdPlacement,
+  delSiteAdPlacement,
+  addSiteAdPlacement,
+  updateSiteAdPlacement,
+  enableSiteAdPlacement,
+  disableSiteAdPlacement,
+} from '@/api/publisher/siteadplacement';
+import { listSite } from '@/api/publisher/site';
+import { listAdPlacement } from '@/api/publisher/adplacement';
 
 const { proxy } = getCurrentInstance();
 
-const publisherList = ref([]);
+const siteAdPlacementList = ref([]);
+const siteOptions = ref([]);
+const adPlacementOptions = ref([]);
 const open = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
@@ -220,39 +285,64 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 10,
-    name: undefined,
+    siteId: undefined,
+    adPlacementId: undefined,
     status: undefined,
   },
   rules: {
-    name: [{ required: true, message: '媒体名称不能为空', trigger: 'blur' }],
-    contactEmail: [
-      { required: true, message: '联系人邮箱不能为空', trigger: 'blur' },
-      { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' },
-    ],
-    contactPhone: [{ required: true, message: '联系人电话不能为空', trigger: 'blur' }],
-    password: [
-      {
-        validator: (rule, value, callback) => {
-          // 新建时密码必填，修改时密码可选
-          const isNew = !data.form.id;
-          if (isNew && (!value || value.trim() === '')) {
-            callback(new Error('登录密码不能为空'));
-          } else if (value && value.length < 6) {
-            callback(new Error('密码长度不能少于6位'));
-          } else {
-            callback();
-          }
-        },
-        trigger: 'blur',
-      },
-    ],
+    siteId: [{ required: true, message: '站点不能为空', trigger: 'change' }],
+    adPlacementId: [{ required: true, message: '广告位不能为空', trigger: 'change' }],
+    name: [{ required: true, message: '媒体广告位名称不能为空', trigger: 'blur' }],
+    demoUrl: [{ type: 'url', message: '请输入有效的URL地址', trigger: 'blur' }],
     status: [{ required: true, message: '状态不能为空', trigger: 'change' }],
   },
 });
 
 const { queryParams, form, rules } = toRefs(data);
 
-/** 查询发布商列表 */
+/** 查询站点列表 */
+function getSiteList() {
+  listSite({ pageNo: 1, pageSize: 1000 }).then((response) => {
+    if (response.records) {
+      siteOptions.value = response.records;
+    } else if (response.rows) {
+      siteOptions.value = response.rows;
+    } else if (response.data) {
+      siteOptions.value = response.data.records || response.data.rows || [];
+    } else {
+      siteOptions.value = Array.isArray(response) ? response : [];
+    }
+  });
+}
+
+/** 查询广告位列表 */
+function getAdPlacementList() {
+  listAdPlacement({ pageNo: 1, pageSize: 1000 }).then((response) => {
+    if (response.records) {
+      adPlacementOptions.value = response.records;
+    } else if (response.rows) {
+      adPlacementOptions.value = response.rows;
+    } else if (response.data) {
+      adPlacementOptions.value = response.data.records || response.data.rows || [];
+    } else {
+      adPlacementOptions.value = Array.isArray(response) ? response : [];
+    }
+  });
+}
+
+/** 获取站点名称 */
+function getSiteName(siteId) {
+  const site = siteOptions.value.find((s) => s.id === siteId);
+  return site ? site.name : '-';
+}
+
+/** 获取广告位名称 */
+function getAdPlacementName(adPlacementId) {
+  const adPlacement = adPlacementOptions.value.find((ap) => ap.id === adPlacementId);
+  return adPlacement ? adPlacement.name : '-';
+}
+
+/** 查询媒体广告位列表 */
 function getList() {
   loading.value = true;
   // 后端使用 pageNo，前端使用 pageNum，需要转换
@@ -261,24 +351,20 @@ function getList() {
     pageNo: queryParams.value.pageNum,
   };
   delete params.pageNum;
-  listPublisher(params).then((response) => {
-    // 后端返回 Page<Publisher>，需要适配前端格式
-    // 如果后端返回的是 { records: [], total: number } 格式
+  listSiteAdPlacement(params).then((response) => {
+    // 后端返回 Page<SiteAdPlacement>，需要适配前端格式
     if (response.records) {
-      publisherList.value = response.records;
+      siteAdPlacementList.value = response.records;
       total.value = response.total;
     } else if (response.rows) {
-      // 如果后端已经适配为 { rows: [], total: number } 格式
-      publisherList.value = response.rows;
+      siteAdPlacementList.value = response.rows;
       total.value = response.total;
     } else if (response.data) {
-      // 如果返回在 data 字段中
-      publisherList.value = response.data.records || response.data.rows || [];
+      siteAdPlacementList.value = response.data.records || response.data.rows || [];
       total.value = response.data.total || 0;
     } else {
-      // 直接返回数组的情况
-      publisherList.value = Array.isArray(response) ? response : [];
-      total.value = publisherList.value.length;
+      siteAdPlacementList.value = Array.isArray(response) ? response : [];
+      total.value = siteAdPlacementList.value.length;
     }
     loading.value = false;
   });
@@ -294,13 +380,13 @@ function cancel() {
 function reset() {
   form.value = {
     id: undefined,
+    siteId: undefined,
+    adPlacementId: undefined,
     name: undefined,
-    contactEmail: undefined,
-    contactPhone: undefined,
-    password: undefined,
+    demoUrl: undefined,
     status: 1,
   };
-  proxy.resetForm('publisherRef');
+  proxy.resetForm('siteAdPlacementRef');
 }
 
 /** 搜索按钮操作 */
@@ -326,38 +412,32 @@ function handleSelectionChange(selection) {
 function handleAdd() {
   reset();
   open.value = true;
-  title.value = '添加发布商';
+  title.value = '添加媒体广告位';
 }
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset();
   const id = row.id || ids.value[0];
-  getPublisher(id).then((response) => {
+  getSiteAdPlacement(id).then((response) => {
     form.value = response.data || response;
     open.value = true;
-    title.value = '修改发布商';
+    title.value = '修改媒体广告位';
   });
 }
 
 /** 提交按钮 */
 function submitForm() {
-  proxy.$refs['publisherRef'].validate((valid) => {
+  proxy.$refs['siteAdPlacementRef'].validate((valid) => {
     if (valid) {
-      // 构建提交数据，修改时不包含密码字段（如果密码为空）
-      const submitData = { ...form.value };
-      if (submitData.id != undefined && !submitData.password) {
-        delete submitData.password;
-      }
-      
-      if (submitData.id != undefined) {
-        updatePublisher(submitData).then((response) => {
+      if (form.value.id != undefined) {
+        updateSiteAdPlacement(form.value).then((response) => {
           proxy.$modal.msgSuccess('修改成功');
           open.value = false;
           getList();
         });
       } else {
-        addPublisher(submitData).then((response) => {
+        addSiteAdPlacement(form.value).then((response) => {
           proxy.$modal.msgSuccess('新增成功');
           open.value = false;
           getList();
@@ -369,12 +449,14 @@ function submitForm() {
 
 /** 删除按钮操作 */
 function handleDelete(row) {
-  const publisherIds = row.id || ids.value;
-  const publisherId = Array.isArray(publisherIds) ? publisherIds[0] : publisherIds;
+  const siteAdPlacementIds = row.id || ids.value;
+  const siteAdPlacementId = Array.isArray(siteAdPlacementIds)
+    ? siteAdPlacementIds[0]
+    : siteAdPlacementIds;
   proxy.$modal
-    .confirm('是否确认删除ID为"' + publisherId + '"的数据项？')
+    .confirm('是否确认删除ID为"' + siteAdPlacementId + '"的数据项？')
     .then(function () {
-      return delPublisher(publisherId);
+      return delSiteAdPlacement(siteAdPlacementId);
     })
     .then(() => {
       getList();
@@ -387,9 +469,9 @@ function handleDelete(row) {
 function handleEnable(row) {
   const id = row.id;
   proxy.$modal
-    .confirm('是否确认启用ID为"' + id + '"的发布商？')
+    .confirm('是否确认启用ID为"' + id + '"的媒体广告位？')
     .then(function () {
-      return enablePublisher(id);
+      return enableSiteAdPlacement(id);
     })
     .then(() => {
       getList();
@@ -402,9 +484,9 @@ function handleEnable(row) {
 function handleDisable(row) {
   const id = row.id;
   proxy.$modal
-    .confirm('是否确认禁用ID为"' + id + '"的发布商？')
+    .confirm('是否确认禁用ID为"' + id + '"的媒体广告位？')
     .then(function () {
-      return disablePublisher(id);
+      return disableSiteAdPlacement(id);
     })
     .then(() => {
       getList();
@@ -413,6 +495,9 @@ function handleDisable(row) {
     .catch(() => {});
 }
 
+// 初始化
+getSiteList();
+getAdPlacementList();
 getList();
 </script>
 
