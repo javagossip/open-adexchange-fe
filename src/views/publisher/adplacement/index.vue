@@ -349,13 +349,19 @@
             <el-table-column label="字段标识" prop="assetKey" width="100" />
             <el-table-column label="资产类型" prop="assetType" width="100">
               <template #default="scope">
-                {{ getAssetTypeLabel(scope.row.assetType) }}
+                {{ scope.row.assetType || '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="分类" prop="assetType" width="80">
+            <el-table-column label="数据资产类型" prop="dataAssetType" width="120">
               <template #default="scope">
-                <el-tag size="small" :type="getAssetCategoryTagType(scope.row.assetType)">
-                  {{ getAssetCategory(scope.row.assetType) }}
+                <span v-if="scope.row.dataAssetType">{{ scope.row.dataAssetType }}</span>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="格式" prop="format" width="80">
+              <template #default="scope">
+                <el-tag size="small" :type="getFormatTagType(getRowFormat(scope.row))">
+                  {{ getNativeAssetFormatLabel(getRowFormat(scope.row)) }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -366,15 +372,22 @@
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="尺寸/长度" width="100">
+            <el-table-column label="尺寸/长度" width="120">
               <template #default="scope">
-                <span v-if="isImageOrVideoAsset(scope.row.assetType)">
+                <span v-if="isImageOrVideoFormat(getRowFormat(scope.row))">
                   {{ scope.row.width || '-' }}×{{ scope.row.height || '-' }}
                 </span>
-                <span v-else-if="isTextAsset(scope.row.assetType)">
+                <span v-else-if="isTextFormat(getRowFormat(scope.row))">
                   {{ scope.row.minLength || 0 }}-{{ scope.row.maxLength || '∞' }}
                 </span>
                 <span v-else>-</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="约束配置" width="150">
+              <template #default="scope">
+                <span style="font-size: 12px;">
+                  {{ formatConstraints(scope.row.constraints, getRowFormat(scope.row)) }}
+                </span>
               </template>
             </el-table-column>
             <el-table-column label="操作" width="120" align="center">
@@ -404,40 +417,45 @@
     <!-- 原生资产编辑对话框 -->
     <el-dialog title="编辑原生资产" v-model="nativeAssetDialogOpen" width="600px" append-to-body>
       <el-form ref="nativeAssetRef" :model="nativeAssetForm" :rules="nativeAssetRules" label-width="100px">
-        <el-form-item label="资产类型" prop="assetType">
-          <el-select v-model="nativeAssetForm.assetType" placeholder="请选择资产类型" style="width: 100%" @change="handleAssetTypeChange">
-            <el-option-group label="文本类">
+        <el-form-item label="资产类型" prop="assetTypeKey">
+          <el-select v-model="nativeAssetForm.assetTypeKey" placeholder="请选择资产类型" style="width: 100%" @change="handleAssetTypeChange">
+            <el-option-group label="标题类型">
               <el-option label="标题" value="TITLE" />
-              <el-option label="描述" value="DESCRIPTION" />
-              <el-option label="CTA" value="CTA" />
-              <el-option label="广告商" value="ADVERTISER" />
-              <el-option label="免责声明" value="DISCLAIMER" />
             </el-option-group>
-            <el-option-group label="图片类">
-              <el-option label="主图" value="MAIN_IMAGE" />
+            <el-option-group label="图片类型">
               <el-option label="图标" value="ICON" />
+              <el-option label="主图" value="MAIN_IMAGE" />
               <el-option label="图片" value="IMAGE" />
-              <el-option label="封面图" value="COVER_IMAGE" />
             </el-option-group>
-            <el-option-group label="视频类">
+            <el-option-group label="视频类型">
               <el-option label="视频" value="VIDEO" />
-              <el-option label="视频封面" value="VIDEO_COVER" />
             </el-option-group>
-            <el-option-group label="数据类">
+            <el-option-group label="数据类型 - 文本">
+              <el-option label="描述" value="DESC" />
+              <el-option label="描述2" value="DESC2" />
+              <el-option label="赞助方" value="SPONSORED" />
+              <el-option label="CTA" value="CTA" />
+              <el-option label="地址" value="ADDRESS" />
+            </el-option-group>
+            <el-option-group label="数据类型 - 数字">
               <el-option label="评分" value="RATING" />
-              <el-option label="下载次数" value="DOWNLOADS" />
-              <el-option label="价格" value="PRICE" />
-              <el-option label="原价" value="SALE_PRICE" />
+              <el-option label="点赞数" value="LIKES" />
+              <el-option label="下载数" value="DOWNLOADS" />
             </el-option-group>
-            <el-option-group label="操作/合规类">
-              <el-option label="点击链接" value="CLICK_URL" />
-              <el-option label="深度链接" value="DEEPLINK" />
-              <el-option label="回退链接" value="FALLBACK_URL" />
-              <el-option label="广告标志" value="AD_BADGE" />
-              <el-option label="广告选择" value="AD_CHOICES" />
-              <el-option label="隐私链接" value="PRIVACY_URL" />
+            <el-option-group label="数据类型 - 货币">
+              <el-option label="价格" value="PRICE" />
+              <el-option label="销售价格" value="SALE_PRICE" />
+            </el-option-group>
+            <el-option-group label="数据类型 - 电话">
+              <el-option label="电话" value="PHONE" />
+            </el-option-group>
+            <el-option-group label="URL类型">
+              <el-option label="展示地址" value="DISPLAY_URL" />
             </el-option-group>
           </el-select>
+        </el-form-item>
+        <el-form-item v-if="nativeAssetForm.assetTypeKey && getAssetInfo(nativeAssetForm.assetTypeKey)?.dataAssetType" label="数据资产类型" prop="dataAssetType">
+          <el-input v-model="nativeAssetForm.dataAssetType" :disabled="true" placeholder="自动填充" />
         </el-form-item>
         <el-form-item label="字段名称" prop="assetName">
           <el-input v-model="nativeAssetForm.assetName" placeholder="请输入字段名称，如：标题" />
@@ -457,8 +475,8 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <!-- 文本类字段 -->
-        <template v-if="isTextAsset(nativeAssetForm.assetType)">
+        <!-- 文本格式字段 (text) -->
+        <template v-if="nativeAssetForm.assetTypeKey && isTextFormat(getAssetFormat(nativeAssetForm.assetTypeKey))">
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="最小长度" prop="minLength">
@@ -472,8 +490,8 @@
             </el-col>
           </el-row>
         </template>
-        <!-- 图片/视频类字段 -->
-        <template v-if="isImageOrVideoAsset(nativeAssetForm.assetType)">
+        <!-- 图片/视频格式字段 (image/video) -->
+        <template v-if="nativeAssetForm.assetTypeKey && isImageOrVideoFormat(getAssetFormat(nativeAssetForm.assetTypeKey))">
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="宽度" prop="width">
@@ -495,6 +513,96 @@
           <el-form-item label="最大大小(KB)" prop="maxSizeKb">
             <el-input-number v-model="nativeAssetForm.maxSizeKb" :min="0" style="width: 100%" />
           </el-form-item>
+        </template>
+        <!-- 数据资产约束 (constraints) - 用于 number/money/phone 等格式 -->
+        <template v-if="nativeAssetForm.assetTypeKey && isDataAssetWithConstraints(nativeAssetForm.assetTypeKey)">
+          <el-divider content-position="left">约束配置</el-divider>
+          <!-- number 类型约束：min, max, scale -->
+          <template v-if="getAssetFormat(nativeAssetForm.assetTypeKey) === 'number'">
+            <el-row :gutter="20">
+              <el-col :span="8">
+                <el-form-item label="最小值" prop="constraints.min">
+                  <el-input
+                    v-model.number="nativeAssetForm.constraints.min"
+                    type="number"
+                    placeholder="最小值"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="最大值" prop="constraints.max">
+                  <el-input
+                    v-model.number="nativeAssetForm.constraints.max"
+                    type="number"
+                    placeholder="最大值"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="小数位数" prop="constraints.scale">
+                  <el-input
+                    v-model.number="nativeAssetForm.constraints.scale"
+                    type="number"
+                    placeholder="小数位数"
+                    :min="0"
+                    :max="10"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </template>
+          <!-- money 类型约束：currency, precision -->
+          <template v-if="getAssetFormat(nativeAssetForm.assetTypeKey) === 'money'">
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="币种" prop="constraints.currency">
+                  <el-select
+                    v-model="nativeAssetForm.constraints.currency"
+                    placeholder="请选择币种"
+                    filterable
+                    allow-create
+                    clearable
+                    style="width: 100%"
+                  >
+                    <el-option label="USD (美元)" value="USD" />
+                    <el-option label="CNY (人民币)" value="CNY" />
+                    <el-option label="EUR (欧元)" value="EUR" />
+                    <el-option label="GBP (英镑)" value="GBP" />
+                    <el-option label="JPY (日元)" value="JPY" />
+                    <el-option label="HKD (港币)" value="HKD" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="精度" prop="constraints.precision">
+                  <el-input
+                    v-model.number="nativeAssetForm.constraints.precision"
+                    type="number"
+                    placeholder="精度（小数位数）"
+                    :min="0"
+                    :max="10"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </template>
+          <!-- phone 类型约束：可以添加格式验证规则 -->
+          <template v-if="getAssetFormat(nativeAssetForm.assetTypeKey) === 'phone'">
+            <el-form-item label="格式验证" prop="constraints.pattern">
+              <el-input
+                v-model="nativeAssetForm.constraints.pattern"
+                placeholder="正则表达式，如：^1[3-9]\\d{9}$ (中国手机号)"
+                clearable
+              />
+              <div style="font-size: 12px; color: #909399; margin-top: 5px;">
+                可选：输入正则表达式用于验证电话号码格式
+              </div>
+            </el-form-item>
+          </template>
         </template>
       </el-form>
       <template #footer>
@@ -535,34 +643,33 @@ const nativeAssetDialogOpen = ref(false);
 const nativeAssetForm = ref({});
 const editingNativeAssetIndex = ref(-1);
 
-// 原生资产类型映射
+// 原生资产类型映射 - 根据 NativeAssetType 枚举定义
 const nativeAssetTypeMap = {
-  // 文本类
-  TITLE: { name: '标题', code: 'title', category: 'text' },
-  DESCRIPTION: { name: '描述', code: 'description', category: 'text' },
-  CTA: { name: 'CTA', code: 'cta', category: 'text' },
-  ADVERTISER: { name: '广告商', code: 'advertiser', category: 'text' },
-  DISCLAIMER: { name: '免责声明', code: 'disclaimer', category: 'text' },
-  // 图片类
-  MAIN_IMAGE: { name: '主图', code: 'main_image', category: 'image' },
-  ICON: { name: '图标', code: 'icon', category: 'image' },
-  IMAGE: { name: '图片', code: 'image', category: 'image' },
-  COVER_IMAGE: { name: '封面图', code: 'cover_image', category: 'image' },
-  // 视频类
-  VIDEO: { name: '视频', code: 'video', category: 'video' },
-  VIDEO_COVER: { name: '视频封面', code: 'video_cover', category: 'video' },
-  // 数据类
-  RATING: { name: '评分', code: 'rating', category: 'data' },
-  DOWNLOADS: { name: '下载次数', code: 'downloads', category: 'data' },
-  PRICE: { name: '价格', code: 'price', category: 'data' },
-  SALE_PRICE: { name: '原价', code: 'sale_price', category: 'data' },
-  // 操作/合规类
-  CLICK_URL: { name: '点击链接', code: 'click_url', category: 'action' },
-  DEEPLINK: { name: '深度链接', code: 'deeplink', category: 'action' },
-  FALLBACK_URL: { name: '回退链接', code: 'fallback_url', category: 'action' },
-  AD_BADGE: { name: '广告标志', code: 'ad_badge', category: 'action' },
-  AD_CHOICES: { name: '广告选择', code: 'ad_choices', category: 'action' },
-  PRIVACY_URL: { name: '隐私链接', code: 'privacy_url', category: 'action' },
+  // title 类型
+  TITLE: { name: '标题', code: 'title', assetType: 'title', dataAssetType: null, format: 'text' },
+  // image 类型
+  ICON: { name: '图标', code: 'icon', assetType: 'image', dataAssetType: null, format: 'image' },
+  MAIN_IMAGE: { name: '主图', code: 'main_image', assetType: 'image', dataAssetType: null, format: 'image' },
+  IMAGE: { name: '图片', code: 'image', assetType: 'image', dataAssetType: null, format: 'image' },
+  // video 类型
+  VIDEO: { name: '视频', code: 'video', assetType: 'video', dataAssetType: null, format: 'video' },
+  // data 类型 - 文本格式
+  DESC: { name: '描述', code: 'desc', assetType: 'data', dataAssetType: 'desc', format: 'text' },
+  DESC2: { name: '描述2', code: 'desc2', assetType: 'data', dataAssetType: 'desc2', format: 'text' },
+  SPONSORED: { name: '赞助方', code: 'sponsored', assetType: 'data', dataAssetType: 'sponsored', format: 'text' },
+  CTA: { name: 'CTA', code: 'ctatext', assetType: 'data', dataAssetType: 'ctatext', format: 'text' },
+  ADDRESS: { name: '地址', code: 'address', assetType: 'data', dataAssetType: 'address', format: 'text' },
+  // data 类型 - 数字格式
+  RATING: { name: '评分', code: 'rating', assetType: 'data', dataAssetType: 'rating', format: 'number' },
+  LIKES: { name: '点赞数', code: 'likes', assetType: 'data', dataAssetType: 'likes', format: 'number' },
+  DOWNLOADS: { name: '下载数', code: 'downloads', assetType: 'data', dataAssetType: 'downloads', format: 'number' },
+  // data 类型 - 货币格式
+  PRICE: { name: '价格', code: 'price', assetType: 'data', dataAssetType: 'price', format: 'money' },
+  SALE_PRICE: { name: '销售价格', code: 'saleprice', assetType: 'data', dataAssetType: 'saleprice', format: 'money' },
+  // data 类型 - 电话格式
+  PHONE: { name: '电话', code: 'phone', assetType: 'data', dataAssetType: 'phone', format: 'phone' },
+  // url 类型
+  DISPLAY_URL: { name: '展示地址', code: 'displayurl', assetType: 'url', dataAssetType: 'displayurl', format: 'url' },
 };
 
 const data = reactive({
@@ -585,7 +692,7 @@ const data = reactive({
 const nativeAssetRules = {
   assetName: [{ required: true, message: '字段名称不能为空', trigger: 'blur' }],
   assetKey: [{ required: true, message: '字段标识不能为空', trigger: 'blur' }],
-  assetType: [{ required: true, message: '资产类型不能为空', trigger: 'change' }],
+  assetTypeKey: [{ required: true, message: '资产类型不能为空', trigger: 'change' }],
 };
 
 const { queryParams, form, rules } = toRefs(data);
@@ -601,47 +708,120 @@ function getFormatLabel(adFormat) {
   return formatMap[adFormat] || adFormat;
 }
 
-/** 获取资产类型标签 */
-function getAssetTypeLabel(assetType) {
-  return nativeAssetTypeMap[assetType]?.name || assetType;
+/** 获取资产信息 */
+function getAssetInfo(assetTypeKey) {
+  return nativeAssetTypeMap[assetTypeKey];
 }
 
-/** 获取资产分类 */
-function getAssetCategory(assetType) {
-  const categoryMap = {
+/** 获取资产类型标签（通过枚举键） */
+function getAssetTypeLabel(assetTypeKey) {
+  return nativeAssetTypeMap[assetTypeKey]?.name || assetTypeKey;
+}
+
+/** 获取资产类型标签（通过行数据，兼容新旧数据） */
+function getAssetTypeLabelByKey(row) {
+  // 如果 row 中有 assetTypeKey（枚举键），使用它
+  if (row.assetTypeKey) {
+    return getAssetTypeLabel(row.assetTypeKey);
+  }
+  // 否则尝试通过 assetType 和 dataAssetType 查找匹配的枚举
+  for (const [key, info] of Object.entries(nativeAssetTypeMap)) {
+    if (info.assetType === row.assetType && info.dataAssetType === row.dataAssetType) {
+      return info.name;
+    }
+  }
+  // 如果找不到，返回 assetName 或 assetType
+  return row.assetName || row.assetType || '-';
+}
+
+/** 获取原生资产格式标签 */
+function getNativeAssetFormatLabel(format) {
+  const formatMap = {
     text: '文本',
     image: '图片',
     video: '视频',
-    data: '数据',
-    action: '操作',
+    number: '数字',
+    money: '货币',
+    phone: '电话',
+    url: 'URL',
   };
-  const category = nativeAssetTypeMap[assetType]?.category;
-  return categoryMap[category] || category;
+  return formatMap[format] || format || '-';
 }
 
-/** 获取资产分类标签颜色 */
-function getAssetCategoryTagType(assetType) {
-  const categoryTagMap = {
+/** 获取格式标签颜色 */
+function getFormatTagType(format) {
+  const formatTagMap = {
     text: '',
     image: 'success',
     video: 'warning',
-    data: 'info',
-    action: 'danger',
+    number: 'info',
+    money: 'warning',
+    phone: '',
+    url: 'danger',
   };
-  const category = nativeAssetTypeMap[assetType]?.category;
-  return categoryTagMap[category] || '';
+  return formatTagMap[format] || '';
 }
 
-/** 判断是否为文本类资产 */
-function isTextAsset(assetType) {
-  const category = nativeAssetTypeMap[assetType]?.category;
-  return category === 'text';
+/** 获取资产格式 */
+function getAssetFormat(assetTypeKey) {
+  return nativeAssetTypeMap[assetTypeKey]?.format;
 }
 
-/** 判断是否为图片/视频类资产 */
-function isImageOrVideoAsset(assetType) {
-  const category = nativeAssetTypeMap[assetType]?.category;
-  return category === 'image' || category === 'video';
+/** 获取行的格式（从 format 字段或根据 assetType 和 dataAssetType 推断） */
+function getRowFormat(row) {
+  // 如果已经有 format 字段，直接返回
+  if (row.format) {
+    return row.format;
+  }
+  // 否则根据 assetType 和 dataAssetType 查找对应的枚举并返回 format
+  const assetTypeKey = findAssetTypeKey(row.assetType, row.dataAssetType);
+  if (assetTypeKey) {
+    return getAssetFormat(assetTypeKey);
+  }
+  // 如果找不到，根据 assetType 返回默认格式
+  const defaultFormatMap = {
+    title: 'text',
+    image: 'image',
+    video: 'video',
+    data: 'text', // data 类型默认是 text，但实际应该根据 dataAssetType 确定
+    url: 'url',
+  };
+  return defaultFormatMap[row.assetType] || '';
+}
+
+/** 判断是否为文本格式 */
+function isTextFormat(format) {
+  return format === 'text';
+}
+
+/** 判断是否为图片/视频格式 */
+function isImageOrVideoFormat(format) {
+  return format === 'image' || format === 'video';
+}
+
+/** 判断是否为需要约束配置的数据资产 */
+function isDataAssetWithConstraints(assetTypeKey) {
+  const format = getAssetFormat(assetTypeKey);
+  return format === 'number' || format === 'money' || format === 'phone';
+}
+
+/** 格式化约束信息用于显示 */
+function formatConstraints(constraints, format) {
+  if (!constraints || typeof constraints !== 'object') {
+    return '-';
+  }
+  const parts = [];
+  if (format === 'number') {
+    if (constraints.min !== undefined) parts.push(`min:${constraints.min}`);
+    if (constraints.max !== undefined) parts.push(`max:${constraints.max}`);
+    if (constraints.scale !== undefined) parts.push(`scale:${constraints.scale}`);
+  } else if (format === 'money') {
+    if (constraints.currency) parts.push(`币种:${constraints.currency}`);
+    if (constraints.precision !== undefined) parts.push(`精度:${constraints.precision}`);
+  } else if (format === 'phone') {
+    if (constraints.pattern) parts.push('已配置格式');
+  }
+  return parts.length > 0 ? parts.join(', ') : '-';
 }
 
 /** 查询广告位列表 */
@@ -829,9 +1009,11 @@ function handleDisable(row) {
 function handleAddNativeAsset() {
   editingNativeAssetIndex.value = -1;
   nativeAssetForm.value = {
+    assetTypeKey: undefined, // 枚举键（用于选择器）
     assetName: undefined,
     assetKey: undefined,
-    assetType: undefined,
+    assetType: undefined, // 基础资产类型 (title/image/video/data/url)
+    dataAssetType: undefined, // 数据资产类型（当 assetType 为 data 时）
     required: false,
     repeatable: false,
     minLength: undefined,
@@ -841,6 +1023,14 @@ function handleAddNativeAsset() {
     ratio: undefined,
     mimeTypes: undefined,
     maxSizeKb: undefined,
+    constraints: {
+      min: null,
+      max: null,
+      scale: null,
+      currency: null,
+      precision: null,
+      pattern: null,
+    }, // 数据资产约束（用于 number/money/phone 等），初始化为 null 以保持响应式
   };
   nativeAssetDialogOpen.value = true;
 }
@@ -848,7 +1038,28 @@ function handleAddNativeAsset() {
 /** 编辑原生资产 */
 function handleEditNativeAsset(index) {
   editingNativeAssetIndex.value = index;
-  nativeAssetForm.value = { ...form.value.nativeAd.nativeAssets[index] };
+  const asset = form.value.nativeAd.nativeAssets[index];
+  // 根据 assetType 和 dataAssetType 查找对应的枚举键
+  const assetTypeKey = findAssetTypeKey(asset.assetType, asset.dataAssetType);
+  // 确保 constraints 是一个对象，并创建新的对象以保持响应式
+  // 初始化所有可能的约束属性
+  const constraints = {
+    min: null,
+    max: null,
+    scale: null,
+    currency: null,
+    precision: null,
+    pattern: null,
+  };
+  // 如果资产已有约束，则复制过来
+  if (asset.constraints && typeof asset.constraints === 'object') {
+    Object.assign(constraints, asset.constraints);
+  }
+  nativeAssetForm.value = {
+    ...asset,
+    assetTypeKey: assetTypeKey, // 设置枚举键用于选择器回显
+    constraints: constraints, // 确保 constraints 是对象，包含所有属性
+  };
   nativeAssetDialogOpen.value = true;
 }
 
@@ -858,12 +1069,14 @@ function handleDeleteNativeAsset(index) {
 }
 
 /** 资产类型变化 */
-function handleAssetTypeChange(assetType) {
-  // 自动填充字段名称和字段标识
-  const assetInfo = nativeAssetTypeMap[assetType];
+function handleAssetTypeChange(assetTypeKey) {
+  // 自动填充字段名称、字段标识、资产类型和数据资产类型
+  const assetInfo = nativeAssetTypeMap[assetTypeKey];
   if (assetInfo) {
     nativeAssetForm.value.assetName = assetInfo.name;
     nativeAssetForm.value.assetKey = assetInfo.code;
+    nativeAssetForm.value.assetType = assetInfo.assetType; // 设置基础资产类型 (title/image/video/data/url)
+    nativeAssetForm.value.dataAssetType = assetInfo.dataAssetType || null; // 设置数据资产类型（如果有）
   }
   // 重置类型相关字段
   nativeAssetForm.value.minLength = undefined;
@@ -873,16 +1086,92 @@ function handleAssetTypeChange(assetType) {
   nativeAssetForm.value.ratio = undefined;
   nativeAssetForm.value.mimeTypes = undefined;
   nativeAssetForm.value.maxSizeKb = undefined;
+  // 重置约束配置 - 确保 constraints 对象存在并更新其属性
+  if (!nativeAssetForm.value.constraints) {
+    nativeAssetForm.value.constraints = {
+      min: null,
+      max: null,
+      scale: null,
+      currency: null,
+      precision: null,
+      pattern: null,
+    };
+  }
+  const format = getAssetFormat(assetTypeKey);
+  if (format === 'number') {
+    // 重置 number 类型的约束
+    nativeAssetForm.value.constraints.min = null;
+    nativeAssetForm.value.constraints.max = null;
+    nativeAssetForm.value.constraints.scale = null;
+    // 清空其他类型的约束
+    nativeAssetForm.value.constraints.currency = null;
+    nativeAssetForm.value.constraints.precision = null;
+    nativeAssetForm.value.constraints.pattern = null;
+  } else if (format === 'money') {
+    // 重置 money 类型的约束
+    nativeAssetForm.value.constraints.currency = null;
+    nativeAssetForm.value.constraints.precision = null;
+    // 清空其他类型的约束
+    nativeAssetForm.value.constraints.min = null;
+    nativeAssetForm.value.constraints.max = null;
+    nativeAssetForm.value.constraints.scale = null;
+    nativeAssetForm.value.constraints.pattern = null;
+  } else if (format === 'phone') {
+    // 重置 phone 类型的约束
+    nativeAssetForm.value.constraints.pattern = null;
+    // 清空其他类型的约束
+    nativeAssetForm.value.constraints.min = null;
+    nativeAssetForm.value.constraints.max = null;
+    nativeAssetForm.value.constraints.scale = null;
+    nativeAssetForm.value.constraints.currency = null;
+    nativeAssetForm.value.constraints.precision = null;
+  } else {
+    // 清空所有约束
+    nativeAssetForm.value.constraints.min = null;
+    nativeAssetForm.value.constraints.max = null;
+    nativeAssetForm.value.constraints.scale = null;
+    nativeAssetForm.value.constraints.currency = null;
+    nativeAssetForm.value.constraints.precision = null;
+    nativeAssetForm.value.constraints.pattern = null;
+  }
+}
+
+/** 根据 assetType 和 dataAssetType 查找对应的枚举键（用于编辑时回显） */
+function findAssetTypeKey(assetType, dataAssetType) {
+  for (const [key, info] of Object.entries(nativeAssetTypeMap)) {
+    if (info.assetType === assetType && info.dataAssetType === dataAssetType) {
+      return key;
+    }
+  }
+  return null;
 }
 
 /** 提交原生资产 */
 function submitNativeAsset() {
   proxy.$refs['nativeAssetRef'].validate((valid) => {
     if (valid) {
+      // 构建提交数据，移除 assetTypeKey（仅用于前端选择器）
+      const submitData = { ...nativeAssetForm.value };
+      delete submitData.assetTypeKey;
+      
+      // 清理空的 constraints 对象
+      if (submitData.constraints && Object.keys(submitData.constraints).length === 0) {
+        submitData.constraints = undefined;
+      } else if (submitData.constraints) {
+        // 清理 constraints 中的 undefined 值
+        const cleanedConstraints = {};
+        for (const [key, value] of Object.entries(submitData.constraints)) {
+          if (value !== undefined && value !== null && value !== '') {
+            cleanedConstraints[key] = value;
+          }
+        }
+        submitData.constraints = Object.keys(cleanedConstraints).length > 0 ? cleanedConstraints : undefined;
+      }
+      
       if (editingNativeAssetIndex.value >= 0) {
-        form.value.nativeAd.nativeAssets[editingNativeAssetIndex.value] = { ...nativeAssetForm.value };
+        form.value.nativeAd.nativeAssets[editingNativeAssetIndex.value] = submitData;
       } else {
-        form.value.nativeAd.nativeAssets.push({ ...nativeAssetForm.value });
+        form.value.nativeAd.nativeAssets.push(submitData);
       }
       nativeAssetDialogOpen.value = false;
     }
