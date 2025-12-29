@@ -274,6 +274,49 @@
         >
           <el-input v-model="form.appBundle" placeholder="请输入 App Bundle" />
         </el-form-item>
+        <el-form-item label="关键字" prop="keywords">
+          <div style="width: 100%">
+            <el-input
+              v-model="keywordInput"
+              placeholder="请输入关键字，按回车添加"
+              style="width: 100%; margin-bottom: 10px"
+              @keyup.enter="handleAddKeyword"
+            >
+              <template #append>
+                <el-button @click="handleAddKeyword">添加</el-button>
+              </template>
+            </el-input>
+            <div v-if="form.keywords && form.keywords.length > 0" style="display: flex; flex-wrap: wrap; gap: 8px">
+              <el-tag
+                v-for="(keyword, index) in form.keywords"
+                :key="index"
+                closable
+                @close="handleRemoveKeyword(index)"
+                type="primary"
+              >
+                {{ keyword }}
+              </el-tag>
+            </div>
+            <div v-else style="color: #909399; font-size: 12px">暂无关键字，请输入关键字后按回车或点击添加按钮</div>
+          </div>
+        </el-form-item>
+        <el-form-item label="分类" prop="cats">
+          <el-select
+            v-model="form.cats"
+            placeholder="请选择分类（支持多选）"
+            multiple
+            filterable
+            style="width: 100%"
+            @visible-change="handleCategorySelectVisible"
+          >
+            <el-option
+              v-for="category in categoryOptions"
+              :key="category.code"
+              :label="category.name"
+              :value="category.code"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
             <el-radio :value="1">启用</el-radio>
@@ -302,11 +345,14 @@ import {
   disableSite,
 } from '@/api/publisher/site';
 import { listPublisher } from '@/api/publisher/publisher';
+import { listCategoriesByParentCode } from '@/api/category';
 
 const { proxy } = getCurrentInstance();
 
 const siteList = ref([]);
 const publisherOptions = ref([]);
+const categoryOptions = ref([]);
+const keywordInput = ref('');
 const open = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
@@ -315,6 +361,8 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const title = ref('');
+// 默认使用 IAB_V2 分类体系
+const categorySystem = ref('INTERNAL');
 
 const data = reactive({
   form: {},
@@ -418,8 +466,11 @@ function reset() {
     domain: undefined,
     appId: undefined,
     appBundle: undefined,
+    keywords: [],
+    cats: [],
     status: 1,
   };
+  keywordInput.value = '';
   proxy.resetForm('siteRef');
 }
 
@@ -471,7 +522,13 @@ function handleUpdate(row) {
   reset();
   const id = row.id || ids.value[0];
   getSite(id).then((response) => {
-    form.value = response.data || response;
+    const siteData = response.data || response;
+    form.value = {
+      ...siteData,
+      // 确保 keywords 和 cats 是数组
+      keywords: Array.isArray(siteData.keywords) ? siteData.keywords : (siteData.keywords ? [siteData.keywords] : []),
+      cats: Array.isArray(siteData.cats) ? siteData.cats : (siteData.cats ? [siteData.cats] : []),
+    };
     // 兼容老数据：如果没有平台字段，根据站点类型设置默认平台
     if (!form.value.platform) {
       if (form.value.siteType === 1) {
@@ -487,14 +544,20 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs['siteRef'].validate((valid) => {
     if (valid) {
+      // 确保 keywords 和 cats 是数组格式
+      const submitData = {
+        ...form.value,
+        keywords: Array.isArray(form.value.keywords) ? form.value.keywords : (form.value.keywords ? [form.value.keywords] : []),
+        cats: Array.isArray(form.value.cats) ? form.value.cats : (form.value.cats ? [form.value.cats] : []),
+      };
       if (form.value.id != undefined) {
-        updateSite(form.value).then((response) => {
+        updateSite(submitData).then((response) => {
           proxy.$modal.msgSuccess('修改成功');
           open.value = false;
           getList();
         });
       } else {
-        addSite(form.value).then((response) => {
+        addSite(submitData).then((response) => {
           proxy.$modal.msgSuccess('新增成功');
           open.value = false;
           getList();
@@ -548,6 +611,67 @@ function handleDisable(row) {
       proxy.$modal.msgSuccess('禁用成功');
     })
     .catch(() => {});
+}
+
+/** 添加关键字 */
+function handleAddKeyword() {
+  const keyword = keywordInput.value?.trim();
+  if (!keyword) {
+    return;
+  }
+  if (!form.value.keywords) {
+    form.value.keywords = [];
+  }
+  // 检查是否已存在
+  if (form.value.keywords.includes(keyword)) {
+    proxy.$modal.msgWarning('该关键字已存在');
+    keywordInput.value = '';
+    return;
+  }
+  form.value.keywords.push(keyword);
+  keywordInput.value = '';
+}
+
+/** 删除关键字 */
+function handleRemoveKeyword(index) {
+  if (form.value.keywords && form.value.keywords.length > index) {
+    form.value.keywords.splice(index, 1);
+  }
+}
+
+/** 加载分类列表 */
+async function loadCategoryOptions() {
+  try {
+    // 递归加载所有分类（包括子分类）
+    const allCategories = [];
+    const loadedCodes = new Set(); // 用于避免重复加载
+    
+    async function loadCategoriesRecursive(parentCode) {
+      const response = await listCategoriesByParentCode(parentCode, categorySystem.value);
+      const cats = response.data || response || [];
+      for (const cat of cats) {
+        // 避免重复添加
+        if (!loadedCodes.has(cat.code)) {
+          allCategories.push(cat);
+          loadedCodes.add(cat.code);
+          // 递归加载子分类
+          await loadCategoriesRecursive(cat.code);
+        }
+      }
+    }
+    await loadCategoriesRecursive(null);
+    categoryOptions.value = allCategories;
+  } catch (error) {
+    console.error('加载分类列表失败:', error);
+    proxy.$modal.msgError('加载分类列表失败');
+  }
+}
+
+/** 分类选择框显示/隐藏时加载分类 */
+function handleCategorySelectVisible(visible) {
+  if (visible && categoryOptions.value.length === 0) {
+    loadCategoryOptions();
+  }
 }
 
 // 初始化
