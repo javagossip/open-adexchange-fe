@@ -171,6 +171,9 @@
         <el-form-item label="广告位名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入广告位名称" />
         </el-form-item>
+        <el-form-item v-if="form.id" label="广告位编码" prop="code">
+          <el-input v-model="form.code" placeholder="广告位编码" :disabled="true" />
+        </el-form-item>
         <el-form-item label="广告位格式" prop="adFormat">
           <el-select v-model="form.adFormat" placeholder="请选择广告位格式" style="width: 100%" @change="handleAdFormatChange">
             <el-option label="横幅广告" value="BANNER" />

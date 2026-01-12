@@ -1,0 +1,30 @@
+# 依赖目录
+node_modules
+
+# 构建产物
+dist
+
+# 日志
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# 编辑器配置
+.idea
+.vscode
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+
+# 其他
+.DS_Store
+*.md
+LICENSE
+

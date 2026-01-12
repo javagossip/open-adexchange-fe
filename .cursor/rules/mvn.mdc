@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+1、基于 maven 构建的 java 项目，如果agent 在执行过程中需要调用maven 命令，使用项目根目录下的./mvnw 命令，不要使用 mvn 命令

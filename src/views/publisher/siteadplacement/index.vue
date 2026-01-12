@@ -121,6 +121,17 @@
         </template>
       </el-table-column>
       <el-table-column
+        label="广告位编码"
+        align="center"
+        prop="adPlacementCode"
+        width="150"
+        :show-overflow-tooltip="true"
+      >
+        <template #default="scope">
+          <span>{{ getAdPlacementCode(scope.row.adPlacementId) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column
         label="截图URL"
         align="center"
         prop="demoUrl"
@@ -227,6 +238,13 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item v-if="form.id" label="广告位编码" prop="adPlacementCode">
+          <el-input
+            v-model="adPlacementCodeDisplay"
+            placeholder="广告位编码"
+            disabled
+          />
+        </el-form-item>
         <el-form-item label="媒体广告位名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入媒体广告位名称" />
         </el-form-item>
@@ -300,6 +318,15 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data);
 
+/** 计算属性：广告位编码显示 */
+const adPlacementCodeDisplay = computed(() => {
+  if (form.value.adPlacementId) {
+    const adPlacement = adPlacementOptions.value.find((ap) => ap.id === form.value.adPlacementId);
+    return adPlacement ? adPlacement.code : '';
+  }
+  return '';
+});
+
 /** 查询站点列表 */
 function getSiteList() {
   listSite({ pageNo: 1, pageSize: 1000 }).then((response) => {
@@ -340,6 +367,12 @@ function getSiteName(siteId) {
 function getAdPlacementName(adPlacementId) {
   const adPlacement = adPlacementOptions.value.find((ap) => ap.id === adPlacementId);
   return adPlacement ? adPlacement.name : '-';
+}
+
+/** 获取广告位编码 */
+function getAdPlacementCode(adPlacementId) {
+  const adPlacement = adPlacementOptions.value.find((ap) => ap.id === adPlacementId);
+  return adPlacement ? adPlacement.code : '-';
 }
 
 /** 查询媒体广告位列表 */
