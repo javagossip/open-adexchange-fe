@@ -76,3 +76,46 @@ export function getDspSetting(dspId) {
   });
 }
 
+// 获取DSP密钥信息
+export function getDspSecret(dspId) {
+  return request({
+    url: '/v1/dsps/' + dspId + '/secret',
+    method: 'get',
+  });
+}
+
+// 搜索DSP, 按DSP名称模糊搜索
+export function searchDsp(searchKey) {
+  return request({
+    url: '/v1/dsps/search',
+    method: 'get',
+    params: { searchKey },
+  });
+}
+
+// 分页查询DSP广告位映射
+export function pageDspPlacementMappings(query) {
+  return request({
+    url: '/v1/dsps/placement-mappings',
+    method: 'get',
+    params: query,
+  });
+}
+
+// 新增DSP广告位映射
+export function addDspPlacementMapping(data) {
+  return request({
+    url: '/v1/dsps/placement-mappings',
+    method: 'post',
+    data: data,
+  });
+}
+
+// 删除DSP广告位映射
+export function delDspPlacementMapping(id) {
+  return request({
+    url: '/v1/dsps/placement-mappings/' + id,
+    method: 'delete',
+  });
+}
+

@@ -18,3 +18,20 @@ export function getDistricts(parentId = 0) {
   });
 }
 
+// 根据地区编码列表获取地区信息
+export function getDistrictsByCodes(codes) {
+  return request({
+    url: '/v1/sys-dicts/districts/by-codes',
+    method: 'post',
+    data: codes,
+  });
+}
+
+// 获取地域等级列表
+export function getRegionLevels() {
+  return request({
+    url: '/v1/sys-dicts/region-levels',
+    method: 'get',
+  });
+}
+

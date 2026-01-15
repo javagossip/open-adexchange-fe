@@ -133,6 +133,13 @@
           <span v-else>-</span>
         </template>
       </el-table-column>
+      <el-table-column label="RTB协议类型" align="center" prop="rtbProtocolType" width="130">
+        <template #default="scope">
+          <el-tag v-if="scope.row.rtbProtocolType === 1" type="success">标准</el-tag>
+          <el-tag v-else-if="scope.row.rtbProtocolType === 2" type="info">DSP平台自有协议</el-tag>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" align="center" prop="status" width="100">
         <template #default="scope">
           <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
@@ -165,6 +172,13 @@
             icon="Setting"
             @click="handleSetting(scope.row)"
             >设置</el-button
+          >
+          <el-button
+            link
+            type="primary"
+            icon="Key"
+            @click="handleViewSecret(scope.row)"
+            >查看密钥</el-button
           >
           <el-button
             v-if="scope.row.status === 0"
@@ -324,9 +338,6 @@
         <el-form-item label="Win通知端点" prop="winNoticeEndpoint">
           <el-input v-model="form.winNoticeEndpoint" placeholder="请输入Win通知端点URL，如：https://example.com/win" />
         </el-form-item>
-        <el-form-item label="DSP Token" prop="token">
-          <el-input v-model="form.token" type="textarea" :rows="2" placeholder="请输入DSP Token" />
-        </el-form-item>
         <el-divider content-position="left">联系人信息</el-divider>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -343,15 +354,17 @@
         <el-form-item label="联系人邮箱" prop="contactEmail">
           <el-input v-model="form.contactEmail" placeholder="请输入联系人邮箱" />
         </el-form-item>
-        <el-divider content-position="left">账户信息</el-divider>
-        <el-form-item label="密码" prop="password">
-          <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="请输入密码"
-            show-password
-          />
-        </el-form-item>
+        <template v-if="!form.id">
+          <el-divider content-position="left">账户信息</el-divider>
+          <el-form-item label="密码" prop="password">
+            <el-input
+              v-model="form.password"
+              type="password"
+              placeholder="请输入密码"
+              show-password
+            />
+          </el-form-item>
+        </template>
         <el-divider content-position="left">性能配置</el-divider>
         <el-row :gutter="20">
           <el-col :span="12">
@@ -375,6 +388,38 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-form-item label="RTB协议类型" prop="rtbProtocolType">
+          <el-radio-group v-model="form.rtbProtocolType" @change="handleRtbProtocolTypeChange">
+            <el-radio :value="1">标准</el-radio>
+            <el-radio :value="2">DSP平台自有协议</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item
+          v-if="form.rtbProtocolType === 2"
+          label="DSP编码"
+          prop="code"
+        >
+          <el-input v-model="form.code" placeholder="请输入DSP编码" />
+        </el-form-item>
+        <template v-if="form.rtbProtocolType === 2">
+          <el-divider content-position="left">密钥配置</el-divider>
+          <el-form-item label="价格加密密钥" prop="encryptionKey">
+            <el-input
+              v-model="form.encryptionKey"
+              type="textarea"
+              :rows="2"
+              placeholder="请输入价格加密密钥（Base64编码）"
+            />
+          </el-form-item>
+          <el-form-item label="完整性密钥" prop="integrityKey">
+            <el-input
+              v-model="form.integrityKey"
+              type="textarea"
+              :rows="2"
+              placeholder="请输入完整性密钥（Base64编码）"
+            />
+          </el-form-item>
+        </template>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
             <el-radio :value="1">使用中</el-radio>
@@ -386,6 +431,78 @@
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
           <el-button @click="cancel">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- DSP密钥信息对话框 -->
+    <el-dialog title="DSP密钥信息" v-model="secretOpen" width="700px" append-to-body>
+      <el-form v-if="secretData" label-width="120px">
+        <el-form-item label="API Token">
+          <div style="display: flex; gap: 8px; align-items: flex-start">
+            <el-input
+              v-model="secretData.apiToken"
+              readonly
+              type="textarea"
+              :rows="3"
+              style="flex: 1"
+              @focus="handleInputFocus($event)"
+            />
+            <el-button
+              type="primary"
+              @click="copyToClipboard(secretData.apiToken, 'API Token')"
+              icon="DocumentCopy"
+              :loading="copyLoading.apiToken"
+            >
+              {{ copyLoading.apiToken ? '复制中' : '复制' }}
+            </el-button>
+          </div>
+        </el-form-item>
+        <el-form-item label="加密密钥">
+          <div style="display: flex; gap: 8px; align-items: flex-start">
+            <el-input
+              v-model="secretData.encryptionKey"
+              readonly
+              type="textarea"
+              :rows="3"
+              style="flex: 1"
+              @focus="handleInputFocus($event)"
+            />
+            <el-button
+              type="primary"
+              @click="copyToClipboard(secretData.encryptionKey, '加密密钥')"
+              icon="DocumentCopy"
+              :loading="copyLoading.encryptionKey"
+            >
+              {{ copyLoading.encryptionKey ? '复制中' : '复制' }}
+            </el-button>
+          </div>
+        </el-form-item>
+        <el-form-item label="完整性密钥">
+          <div style="display: flex; gap: 8px; align-items: flex-start">
+            <el-input
+              v-model="secretData.integrityKey"
+              readonly
+              type="textarea"
+              :rows="3"
+              style="flex: 1"
+              @focus="handleInputFocus($event)"
+            />
+            <el-button
+              type="primary"
+              @click="copyToClipboard(secretData.integrityKey, '完整性密钥')"
+              icon="DocumentCopy"
+              :loading="copyLoading.integrityKey"
+            >
+              {{ copyLoading.integrityKey ? '复制中' : '复制' }}
+            </el-button>
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="copyAllSecrets" icon="DocumentCopy">一键复制全部</el-button>
+          <el-button @click="secretOpen = false">关 闭</el-button>
         </div>
       </template>
     </el-dialog>
@@ -404,6 +521,7 @@ import {
   disableDsp,
   dspSetting,
   getDspSetting,
+  getDspSecret,
 } from '@/api/dsp/dsp';
 import { uploadFile } from '@/api/file';
 import { listSiteAdPlacement } from '@/api/publisher/siteadplacement';
@@ -419,6 +537,7 @@ const countryLoading = ref(false);
 const districtTreeData = ref([]);
 const open = ref(false);
 const settingOpen = ref(false);
+const secretOpen = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
 const ids = ref([]);
@@ -427,6 +546,12 @@ const multiple = ref(true);
 const total = ref(0);
 const title = ref('');
 const currentDspId = ref(null);
+const secretData = ref(null);
+const copyLoading = ref({
+  apiToken: false,
+  encryptionKey: false,
+  integrityKey: false,
+});
 
 const data = reactive({
   form: {},
@@ -446,13 +571,62 @@ const data = reactive({
       { required: true, message: 'Win通知端点不能为空', trigger: 'blur' },
       { type: 'url', message: '请输入有效的URL地址', trigger: 'blur' },
     ],
-    token: [{ required: true, message: 'DSP Token不能为空', trigger: 'blur' }],
     contactEmail: [
       { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' },
     ],
     password: [
-      { required: true, message: '密码不能为空', trigger: 'blur' },
-      { min: 6, message: '密码长度不能少于6位', trigger: 'blur' },
+      {
+        validator: (rule, value, callback) => {
+          // 新增时密码必填，修改时不需要密码
+          if (!form.value.id && !value) {
+            callback(new Error('密码不能为空'));
+          } else if (form.value.id && value && value.length < 6) {
+            callback(new Error('密码长度不能少于6位'));
+          } else if (!form.value.id && value && value.length < 6) {
+            callback(new Error('密码长度不能少于6位'));
+          } else {
+            callback();
+          }
+        },
+        trigger: 'blur',
+      },
+    ],
+    rtbProtocolType: [{ required: true, message: 'RTB协议类型不能为空', trigger: 'change' }],
+    code: [
+      {
+        validator: (rule, value, callback) => {
+          if (form.value.rtbProtocolType === 2 && !value) {
+            callback(new Error('DSP编码不能为空'));
+          } else {
+            callback();
+          }
+        },
+        trigger: 'blur',
+      },
+    ],
+    encryptionKey: [
+      {
+        validator: (rule, value, callback) => {
+          if (form.value.rtbProtocolType === 2 && !value) {
+            callback(new Error('价格加密密钥不能为空'));
+          } else {
+            callback();
+          }
+        },
+        trigger: 'blur',
+      },
+    ],
+    integrityKey: [
+      {
+        validator: (rule, value, callback) => {
+          if (form.value.rtbProtocolType === 2 && !value) {
+            callback(new Error('完整性密钥不能为空'));
+          } else {
+            callback();
+          }
+        },
+        trigger: 'blur',
+      },
     ],
     status: [{ required: true, message: '状态不能为空', trigger: 'change' }],
   },
@@ -563,7 +737,8 @@ function handleCountryVisibleChange(visible) {
 
 /** 加载地域数据（用于树形选择器的懒加载） */
 function loadDistrictData(node, resolve) {
-  const parentId = node ? node.data.id : 0;
+  // 根节点时 node.data 可能不存在，这里做兜底，避免偶发报错导致树不渲染
+  const parentId = !node || !node.data ? 0 : node.data.id;
   getDistricts(parentId).then((response) => {
     const data = response.data || response;
     const districts = Array.isArray(data) ? data : [];
@@ -580,7 +755,12 @@ function loadDistrictData(node, resolve) {
 function initDistrictTree() {
   getDistricts(0).then((response) => {
     const data = response.data || response;
-    districtTreeData.value = Array.isArray(data) ? data : [];
+    const districts = Array.isArray(data) ? data : [];
+    // 与懒加载返回结构保持一致，避免根节点结构不一致导致渲染问题
+    districtTreeData.value = districts.map((district) => ({
+      ...district,
+      leaf: false,
+    }));
   });
 }
 
@@ -623,6 +803,7 @@ function reset() {
   form.value = {
     id: undefined,
     name: undefined,
+    code: undefined,
     brandLogo: undefined,
     bidEndpoint: undefined,
     winNoticeEndpoint: undefined,
@@ -632,6 +813,9 @@ function reset() {
     contactEmail: undefined,
     password: undefined,
     status: 1,
+    rtbProtocolType: 1,
+    encryptionKey: undefined,
+    integrityKey: undefined,
     qpsLimit: undefined,
     timeoutMs: undefined,
   };
@@ -675,12 +859,31 @@ function handleUpdate(row) {
   });
 }
 
+/** RTB协议类型改变时的处理 */
+function handleRtbProtocolTypeChange(value) {
+  // 当切换到标准协议时，清空DSP编码和密钥字段
+  if (value === 1) {
+    form.value.code = undefined;
+    form.value.encryptionKey = undefined;
+    form.value.integrityKey = undefined;
+  }
+  // 清除相关字段的验证状态
+  if (proxy.$refs['dspRef']) {
+    proxy.$refs['dspRef'].clearValidate('code');
+    proxy.$refs['dspRef'].clearValidate('encryptionKey');
+    proxy.$refs['dspRef'].clearValidate('integrityKey');
+  }
+}
+
 /** 提交按钮 */
 function submitForm() {
   proxy.$refs['dspRef'].validate((valid) => {
     if (valid) {
       if (form.value.id != undefined) {
-        updateDsp(form.value).then((response) => {
+        // 修改时，不发送密码字段
+        const updateData = { ...form.value };
+        delete updateData.password;
+        updateDsp(updateData).then((response) => {
           proxy.$modal.msgSuccess('修改成功');
           open.value = false;
           getList();
@@ -810,6 +1013,136 @@ function submitSettingForm() {
     settingOpen.value = false;
     resetSettingForm();
   });
+}
+
+/** 查看密钥信息 */
+function handleViewSecret(row) {
+  const id = row.id;
+  secretData.value = null;
+  // 重置复制状态
+  copyLoading.value = {
+    apiToken: false,
+    encryptionKey: false,
+    integrityKey: false,
+  };
+  getDspSecret(id)
+    .then((response) => {
+      secretData.value = response.data || response;
+      secretOpen.value = true;
+    })
+    .catch(() => {
+      proxy.$modal.msgError('获取密钥信息失败');
+    });
+}
+
+/** 输入框获取焦点时全选文本 */
+function handleInputFocus(event) {
+  event.target.select();
+}
+
+/** 复制到剪贴板 */
+function copyToClipboard(text, label = '') {
+  if (!text) {
+    proxy.$modal.msgWarning('内容为空');
+    return;
+  }
+
+  const loadingKey = label === 'API Token' ? 'apiToken' : label === '加密密钥' ? 'encryptionKey' : 'integrityKey';
+  copyLoading.value[loadingKey] = true;
+
+  // 优先使用现代 Clipboard API
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        proxy.$modal.msgSuccess(`${label || '内容'}复制成功`);
+        copyLoading.value[loadingKey] = false;
+      })
+      .catch((err) => {
+        console.error('复制失败:', err);
+        // 降级到传统方法
+        fallbackCopy(text, label, loadingKey);
+      });
+  } else {
+    // 降级方案
+    fallbackCopy(text, label, loadingKey);
+  }
+}
+
+/** 降级复制方案 */
+function fallbackCopy(text, label, loadingKey) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  textarea.style.top = '-9999px';
+  textarea.setAttribute('readonly', 'readonly');
+  document.body.appendChild(textarea);
+
+  // 兼容 iOS Safari
+  if (navigator.userAgent.match(/ipad|iphone/i)) {
+    const range = document.createRange();
+    range.selectNodeContents(textarea);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    textarea.setSelectionRange(0, 999999);
+  } else {
+    textarea.select();
+  }
+
+  try {
+    const successful = document.execCommand('copy');
+    if (successful) {
+      proxy.$modal.msgSuccess(`${label || '内容'}复制成功`);
+    } else {
+      proxy.$modal.msgError('复制失败，请手动复制');
+    }
+  } catch (err) {
+    console.error('复制失败:', err);
+    proxy.$modal.msgError('复制失败，请手动复制');
+  } finally {
+    document.body.removeChild(textarea);
+    if (loadingKey) {
+      copyLoading.value[loadingKey] = false;
+    }
+  }
+}
+
+/** 一键复制所有密钥 */
+function copyAllSecrets() {
+  if (!secretData.value) {
+    proxy.$modal.msgWarning('没有可复制的密钥信息');
+    return;
+  }
+
+  const allSecrets = [
+    `API Token: ${secretData.value.apiToken || ''}`,
+    `加密密钥: ${secretData.value.encryptionKey || ''}`,
+    `完整性密钥: ${secretData.value.integrityKey || ''}`,
+  ]
+    .filter((line) => line.split(': ')[1]) // 过滤掉空值
+    .join('\n');
+
+  if (!allSecrets) {
+    proxy.$modal.msgWarning('没有可复制的密钥信息');
+    return;
+  }
+
+  // 直接复制，不使用loading状态
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard
+      .writeText(allSecrets)
+      .then(() => {
+        proxy.$modal.msgSuccess('所有密钥信息复制成功');
+      })
+      .catch((err) => {
+        console.error('复制失败:', err);
+        fallbackCopy(allSecrets, '所有密钥信息', null);
+      });
+  } else {
+    fallbackCopy(allSecrets, '所有密钥信息', null);
+  }
 }
 
 // 初始化

@@ -132,15 +132,20 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="截图URL"
+        label="广告位截图"
         align="center"
         prop="demoUrl"
-        :show-overflow-tooltip="true"
+        width="120"
       >
         <template #default="scope">
-          <el-link v-if="scope.row.demoUrl" :href="scope.row.demoUrl" target="_blank" type="primary">
-            查看截图
-          </el-link>
+          <el-image
+            v-if="scope.row.demoUrl"
+            :src="getDemoUrl(scope.row.demoUrl)"
+            style="width: 80px; height: 80px"
+            fit="contain"
+            :preview-src-list="[getDemoUrl(scope.row.demoUrl)]"
+            preview-teleported
+          />
           <span v-else>-</span>
         </template>
       </el-table-column>
@@ -248,10 +253,44 @@
         <el-form-item label="媒体广告位名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入媒体广告位名称" />
         </el-form-item>
-        <el-form-item label="广告位截图URL" prop="demoUrl">
-          <el-input
-            v-model="form.demoUrl"
-            placeholder="请输入广告位截图URL"
+        <el-form-item label="广告位截图" prop="demoUrl">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <el-upload
+              class="demo-url-uploader"
+              action="#"
+              :show-file-list="false"
+              :http-request="handleDemoUrlUpload"
+              :before-upload="beforeDemoUrlUpload"
+              accept="image/*"
+            >
+              <el-image
+                v-if="form.demoUrl"
+                :src="getDemoUrl(form.demoUrl)"
+                fit="contain"
+                style="width: 148px; height: 148px; border: 1px dashed #d9d9d9; border-radius: 6px;"
+                :preview-src-list="[getDemoUrl(form.demoUrl)]"
+                preview-teleported
+              />
+              <div v-else class="upload-placeholder" style="width: 148px; height: 148px; border: 1px dashed #d9d9d9; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+                <el-icon :size="32" style="color: #8c939d;"><Plus /></el-icon>
+                <span style="margin-top: 8px; color: #8c939d; font-size: 12px;">上传截图</span>
+              </div>
+            </el-upload>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <div style="color: #909399; font-size: 12px">建议上传PNG/JPG，大小不超过2MB</div>
+              <el-button v-if="form.demoUrl" type="danger" link @click="form.demoUrl = undefined">移除</el-button>
+            </div>
+          </div>
+        </el-form-item>
+        <el-form-item label="广告位底价" prop="floorPrice">
+          <el-input-number
+            v-model="form.floorPrice"
+            :min="0"
+            :precision="2"
+            :step="0.01"
+            placeholder="请输入广告位底价（CNY）"
+            style="width: 100%"
+            @blur="handleFloorPriceBlur"
           />
         </el-form-item>
         <el-form-item label="状态" prop="status">
@@ -283,8 +322,11 @@ import {
 } from '@/api/publisher/siteadplacement';
 import { listSite } from '@/api/publisher/site';
 import { listAdPlacement } from '@/api/publisher/adplacement';
+import { uploadFile } from '@/api/file';
+import { Plus } from '@element-plus/icons-vue';
 
 const { proxy } = getCurrentInstance();
+const baseUrl = import.meta.env.VITE_APP_BASE_API;
 
 const siteAdPlacementList = ref([]);
 const siteOptions = ref([]);
@@ -311,7 +353,6 @@ const data = reactive({
     siteId: [{ required: true, message: '站点不能为空', trigger: 'change' }],
     adPlacementId: [{ required: true, message: '广告位不能为空', trigger: 'change' }],
     name: [{ required: true, message: '媒体广告位名称不能为空', trigger: 'blur' }],
-    demoUrl: [{ type: 'url', message: '请输入有效的URL地址', trigger: 'blur' }],
     status: [{ required: true, message: '状态不能为空', trigger: 'change' }],
   },
 });
@@ -375,6 +416,52 @@ function getAdPlacementCode(adPlacementId) {
   return adPlacement ? adPlacement.code : '-';
 }
 
+/** 获取截图URL */
+function getDemoUrl(url) {
+  if (!url) return '';
+  if (typeof url !== 'string') return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+  if (url.startsWith(baseUrl)) return url;
+  return baseUrl + (url.startsWith('/') ? url : '/' + url);
+}
+
+/** 图片上传前验证 */
+function beforeDemoUrlUpload(file) {
+  const isImage = file.type && file.type.startsWith('image/');
+  if (!isImage) {
+    proxy.$modal.msgError('请上传图片格式文件');
+    return false;
+  }
+  const isLt2M = file.size / 1024 / 1024 < 2;
+  if (!isLt2M) {
+    proxy.$modal.msgError('图片大小不能超过 2MB');
+    return false;
+  }
+  return true;
+}
+
+/** 处理截图上传 */
+async function handleDemoUrlUpload(options) {
+  try {
+    proxy.$modal.loading('正在上传截图，请稍候...');
+    const res = await uploadFile(options.file);
+    // 后端返回 ApiResponse<String>，图片地址在 data 字段
+    form.value.demoUrl = res.data;
+    proxy.$modal.msgSuccess('上传成功');
+  } catch (e) {
+    proxy.$modal.msgError('上传失败');
+  } finally {
+    proxy.$modal.closeLoading();
+  }
+}
+
+/** 处理底价输入失去焦点事件，格式化小数位数为最多2位 */
+function handleFloorPriceBlur() {
+  if (form.value.floorPrice !== undefined && form.value.floorPrice !== null) {
+    form.value.floorPrice = Math.round(form.value.floorPrice * 100) / 100;
+  }
+}
+
 /** 查询媒体广告位列表 */
 function getList() {
   loading.value = true;
@@ -417,6 +504,7 @@ function reset() {
     adPlacementId: undefined,
     name: undefined,
     demoUrl: undefined,
+    floorPrice: undefined,
     status: 1,
   };
   proxy.resetForm('siteAdPlacementRef');
