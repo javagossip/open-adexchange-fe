@@ -4,6 +4,7 @@ import createVitePlugins from './vite/plugins';
 import pkg from './package.json'; // <--- 新增这一行
 
 const baseUrl = 'http://localhost:9090'; // 后端接口
+const sspApiUrl = 'http://localhost:8080'; // SSP广告接口
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, command }) => {
@@ -52,6 +53,12 @@ export default defineConfig(({ mode, command }) => {
           target: baseUrl,
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/dev-api/, ''),
+        },
+        // SSP广告接口代理 (8080端口)
+        '/publisher-api': {
+          target: sspApiUrl,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/publisher-api/, ''),
         },
         // springdoc proxy
         '^/v3/api-docs/(.*)': {
