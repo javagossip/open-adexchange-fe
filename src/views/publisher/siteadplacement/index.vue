@@ -110,28 +110,6 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="广告位模板"
-        align="center"
-        prop="adPlacementId"
-        width="150"
-        :show-overflow-tooltip="true"
-      >
-        <template #default="scope">
-          <span>{{ getAdPlacementName(scope.row.adPlacementId) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="广告位模板编码"
-        align="center"
-        prop="adPlacementCode"
-        width="150"
-        :show-overflow-tooltip="true"
-      >
-        <template #default="scope">
-          <span>{{ getAdPlacementCode(scope.row.adPlacementId) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column
         label="广告位编码"
         align="center"
         prop="code"
@@ -239,11 +217,15 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="广告位模板" prop="adPlacementId">
+        <el-form-item label="广告位模板" prop="adPlacementIds">
           <el-select
-            v-model="form.adPlacementId"
-            placeholder="请选择广告位模板"
+            v-model="form.adPlacementIds"
+            placeholder="请选择广告位模板（可多选）"
             filterable
+            multiple
+            collapse-tags
+            collapse-tags-tooltip
+            :max-collapse-tags="3"
             style="width: 100%"
           >
             <el-option
@@ -254,17 +236,11 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="广告位模板编码">
-          <el-input
-            :value="adPlacementCodeDisplay"
-            placeholder="广告位模板编码"
-            readonly
-          />
-        </el-form-item>
-        <el-form-item label="广告位编码" prop="code">
+        <el-form-item v-if="form.id" label="广告位编码" prop="code">
           <el-input
             v-model="form.code"
-            placeholder="请输入广告位编码"
+            placeholder="广告位编码"
+            readonly
           />
         </el-form-item>
         <el-form-item label="媒体广告位名称" prop="name">
@@ -368,23 +344,13 @@ const data = reactive({
   },
   rules: {
     siteId: [{ required: true, message: '站点不能为空', trigger: 'change' }],
-    adPlacementId: [{ required: true, message: '广告位模板不能为空', trigger: 'change' }],
+    adPlacementIds: [{ required: true, type: 'array', min: 1, message: '请至少选择一个广告位模板', trigger: 'change' }],
     name: [{ required: true, message: '媒体广告位名称不能为空', trigger: 'blur' }],
-    code: [{ required: true, message: '广告位编码不能为空', trigger: 'blur' }],
     status: [{ required: true, message: '状态不能为空', trigger: 'change' }],
   },
 });
 
 const { queryParams, form, rules } = toRefs(data);
-
-/** 计算属性：广告位编码显示 */
-const adPlacementCodeDisplay = computed(() => {
-  if (form.value.adPlacementId) {
-    const adPlacement = adPlacementOptions.value.find((ap) => ap.id === form.value.adPlacementId);
-    return adPlacement ? adPlacement.code : '';
-  }
-  return '';
-});
 
 /** 查询站点列表 */
 function getSiteList() {
@@ -420,18 +386,6 @@ function getAdPlacementList() {
 function getSiteName(siteId) {
   const site = siteOptions.value.find((s) => s.id === siteId);
   return site ? site.name : '-';
-}
-
-/** 获取广告位名称 */
-function getAdPlacementName(adPlacementId) {
-  const adPlacement = adPlacementOptions.value.find((ap) => ap.id === adPlacementId);
-  return adPlacement ? adPlacement.name : '-';
-}
-
-/** 获取广告位编码 */
-function getAdPlacementCode(adPlacementId) {
-  const adPlacement = adPlacementOptions.value.find((ap) => ap.id === adPlacementId);
-  return adPlacement ? adPlacement.code : '-';
 }
 
 /** 获取截图URL */
@@ -519,7 +473,7 @@ function reset() {
   form.value = {
     id: undefined,
     siteId: undefined,
-    adPlacementId: undefined,
+    adPlacementIds: [],
     name: undefined,
     code: undefined,
     demoUrl: undefined,
