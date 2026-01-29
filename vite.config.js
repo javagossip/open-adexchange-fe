@@ -5,6 +5,7 @@ import pkg from './package.json'; // <--- 新增这一行
 
 const baseUrl = 'http://localhost:9090'; // 后端接口
 const sspApiUrl = 'http://localhost:8080'; // SSP广告接口
+const trackingApiUrl = 'http://localhost:8083'; // Tracking 追踪接口
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, command }) => {
@@ -59,6 +60,12 @@ export default defineConfig(({ mode, command }) => {
           target: sspApiUrl,
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/publisher-api/, ''),
+        },
+        // Tracking 追踪接口代理 (8083端口)
+        '/tracking-api': {
+          target: trackingApiUrl,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/tracking-api/, ''),
         },
         // springdoc proxy
         '^/v3/api-docs/(.*)': {

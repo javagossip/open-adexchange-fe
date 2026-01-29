@@ -84,6 +84,19 @@ export const constantRoutes = [
       },
     ],
   },
+  {
+    path: '/tool',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: 'tracking-simulator',
+        component: () => import('@/views/tool/tracking-simulator/index.vue'),
+        name: 'TrackingSimulator',
+        meta: { title: '广告追踪模拟', icon: 'monitor' },
+      },
+    ],
+  },
 ];
 
 // 动态路由，基于用户权限动态去加载
