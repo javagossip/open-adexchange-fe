@@ -101,6 +101,18 @@
         :show-overflow-tooltip="true"
       />
       <el-table-column
+        label="结算方式"
+        align="center"
+        prop="at"
+        width="120"
+      >
+        <template #default="scope">
+          <span v-if="scope.row.at === 1">一价结算</span>
+          <span v-else-if="scope.row.at === 2">二价结算</span>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column
         label="联系人"
         align="center"
         width="150"
@@ -337,6 +349,12 @@
         </el-form-item>
         <el-form-item label="Win通知端点" prop="winNoticeEndpoint">
           <el-input v-model="form.winNoticeEndpoint" placeholder="请输入Win通知端点URL，如：https://example.com/win" />
+        </el-form-item>
+        <el-form-item label="结算方式" prop="at">
+          <el-radio-group v-model="form.at">
+            <el-radio :value="1">一价结算</el-radio>
+            <el-radio :value="2">二价结算</el-radio>
+          </el-radio-group>
         </el-form-item>
         <el-divider content-position="left">联系人信息</el-divider>
         <el-row :gutter="20">
@@ -629,6 +647,7 @@ const data = reactive({
       },
     ],
     status: [{ required: true, message: '状态不能为空', trigger: 'change' }],
+    at: [{ required: true, message: '结算方式不能为空', trigger: 'change' }],
   },
 });
 
@@ -818,6 +837,7 @@ function reset() {
     integrityKey: undefined,
     qpsLimit: undefined,
     timeoutMs: undefined,
+    at: 1,
   };
   proxy.resetForm('dspRef');
 }

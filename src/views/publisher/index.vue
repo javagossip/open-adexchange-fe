@@ -94,6 +94,16 @@
         prop="contactPhone"
         :show-overflow-tooltip="true"
       />
+      <el-table-column
+        label="媒体收益分成"
+        align="center"
+        prop="revShare"
+        width="110"
+      >
+        <template #default="scope">
+          {{ scope.row.revShare != null ? scope.row.revShare + '%' : '-' }}
+        </template>
+      </el-table-column>
       <el-table-column label="状态" align="center" prop="status" width="100">
         <template #default="scope">
           <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
@@ -166,6 +176,17 @@
         </el-form-item>
         <el-form-item label="联系人电话" prop="contactPhone">
           <el-input v-model="form.contactPhone" placeholder="请输入联系人电话" />
+        </el-form-item>
+        <el-form-item label="媒体收益分成" prop="revShare">
+          <el-input-number
+            v-model="form.revShare"
+            :min="0"
+            :max="100"
+            :precision="0"
+            placeholder="0-100"
+            style="width: 100%"
+          />
+          <span class="form-tip">取值范围 0-100（%）</span>
         </el-form-item>
         <el-form-item label="登录密码" prop="password" v-if="!form.id">
           <el-input
@@ -246,6 +267,18 @@ const data = reactive({
         trigger: 'blur',
       },
     ],
+    revShare: [
+      {
+        validator: (rule, value, callback) => {
+          if (value != null && (value < 0 || value > 100)) {
+            callback(new Error('媒体收益分成取值范围为 0-100'));
+          } else {
+            callback();
+          }
+        },
+        trigger: 'blur',
+      },
+    ],
     status: [{ required: true, message: '状态不能为空', trigger: 'change' }],
   },
 });
@@ -297,6 +330,7 @@ function reset() {
     name: undefined,
     contactEmail: undefined,
     contactPhone: undefined,
+    revShare: undefined,
     password: undefined,
     status: 1,
   };
