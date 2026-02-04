@@ -94,6 +94,11 @@
           {{ formatMoney(scope.row.revenue) }}
         </template>
       </el-table-column>
+      <el-table-column label="ADX平台收益(元)" align="center" prop="adxRevenue" min-width="140">
+        <template #default="scope">
+          {{ formatMoney(scope.row.adxRevenue) }}
+        </template>
+      </el-table-column>
     </el-table>
 
     <pagination

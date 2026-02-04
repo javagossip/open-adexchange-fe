@@ -92,16 +92,6 @@
           >修改</el-button
         >
       </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="Delete"
-          :disabled="multiple"
-          @click="handleDelete"
-          >删除</el-button
-        >
-      </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -245,9 +235,9 @@
         </el-form-item>
         <el-form-item label="平台" prop="platform">
           <el-radio-group v-model="form.platform">
-            <el-radio value="ios" :disabled="form.siteType === 1">iOS</el-radio>
-            <el-radio value="android" :disabled="form.siteType === 1">Android</el-radio>
-            <el-radio value="web">Web</el-radio>
+            <el-radio value="IOS" :disabled="form.siteType === 1">iOS</el-radio>
+            <el-radio value="ANDROID" :disabled="form.siteType === 1">Android</el-radio>
+            <el-radio value="WEB">Web</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item
@@ -414,9 +404,9 @@ function getPublisherName(publisherId) {
 function getPlatformLabel(platform) {
   if (!platform) return '-';
   const map = {
-    ios: 'iOS',
-    android: 'Android',
-    web: 'Web',
+    IOS: 'iOS',
+    ANDROID: 'Android',
+    WEB: 'Web',
   };
   return map[platform] || platform;
 }
@@ -462,7 +452,7 @@ function reset() {
     publisherId: undefined,
     name: undefined,
     siteType: 1,
-    platform: 'web',
+    platform: 'WEB',
     domain: undefined,
     appId: undefined,
     appBundle: undefined,
@@ -478,14 +468,14 @@ function reset() {
 function handleSiteTypeChange() {
   // 切换类型时清空相关字段
   if (form.value.siteType === 1) {
-    // 网站默认使用 web 平台
-    form.value.platform = 'web';
+    // 网站默认使用 WEB 平台
+    form.value.platform = 'WEB';
     form.value.appId = undefined;
     form.value.appBundle = undefined;
   } else {
     form.value.domain = undefined;
-    // 切换为 App 时如果之前是 web 平台，清空平台字段，让用户重新选择
-    if (form.value.platform === 'web') {
+    // 切换为 App 时如果之前是 WEB 平台，清空平台字段，让用户重新选择
+    if (form.value.platform === 'WEB') {
       form.value.platform = undefined;
     }
   }
@@ -532,7 +522,7 @@ function handleUpdate(row) {
     // 兼容老数据：如果没有平台字段，根据站点类型设置默认平台
     if (!form.value.platform) {
       if (form.value.siteType === 1) {
-        form.value.platform = 'web';
+        form.value.platform = 'WEB';
       }
     }
     open.value = true;
