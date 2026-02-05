@@ -257,35 +257,80 @@
                 </el-row>
               </el-collapse-item>
 
-              <el-collapse-item title="设备标识" name="device-id">
+              <el-collapse-item name="device-id">
+                <template #title>
+                  <div class="collapse-title">
+                    <span>设备标识</span>
+                    <el-button
+                      type="primary"
+                      size="small"
+                      link
+                      @click.stop="generateDeviceIdsAll"
+                      class="generate-btn"
+                    >
+                      <el-icon><MagicStick /></el-icon>
+                      自动生成
+                    </el-button>
+                  </div>
+                </template>
                 <el-row :gutter="16">
                   <el-col :span="12">
                     <el-form-item label="IDFA/IMEI" prop="device.ifa">
-                      <el-input v-model="form.device.ifa" placeholder="明文设备码" />
+                      <el-input v-model="form.device.ifa" placeholder="明文设备码">
+                        <template #append>
+                          <el-button @click="generateIfa">
+                            <el-icon><Refresh /></el-icon>
+                          </el-button>
+                        </template>
+                      </el-input>
                     </el-form-item>
                   </el-col>
                   <el-col :span="12">
                     <el-form-item label="设备码MD5" prop="device.didmd5">
-                      <el-input v-model="form.device.didmd5" placeholder="MD5设备码" />
+                      <el-input v-model="form.device.didmd5" placeholder="MD5设备码">
+                        <template #append>
+                          <el-button @click="generateDidmd5">
+                            <el-icon><Refresh /></el-icon>
+                          </el-button>
+                        </template>
+                      </el-input>
                     </el-form-item>
                   </el-col>
                 </el-row>
                 <el-row :gutter="16">
                   <el-col :span="12">
                     <el-form-item label="MAC地址" prop="device.mac">
-                      <el-input v-model="form.device.mac" placeholder="MAC地址明文" />
+                      <el-input v-model="form.device.mac" placeholder="MAC地址明文">
+                        <template #append>
+                          <el-button @click="generateMac">
+                            <el-icon><Refresh /></el-icon>
+                          </el-button>
+                        </template>
+                      </el-input>
                     </el-form-item>
                   </el-col>
                   <el-col :span="12">
                     <el-form-item label="MAC MD5" prop="device.macmd5">
-                      <el-input v-model="form.device.macmd5" placeholder="MAC地址MD5" />
+                      <el-input v-model="form.device.macmd5" placeholder="MAC地址MD5">
+                        <template #append>
+                          <el-button @click="generateMacmd5">
+                            <el-icon><Refresh /></el-icon>
+                          </el-button>
+                        </template>
+                      </el-input>
                     </el-form-item>
                   </el-col>
                 </el-row>
                 <el-row :gutter="16">
                   <el-col :span="12">
                     <el-form-item label="Android ID" prop="device.adid">
-                      <el-input v-model="form.device.adid" placeholder="Android ID" />
+                      <el-input v-model="form.device.adid" placeholder="Android ID">
+                        <template #append>
+                          <el-button @click="generateAdid">
+                            <el-icon><Refresh /></el-icon>
+                          </el-button>
+                        </template>
+                      </el-input>
                     </el-form-item>
                   </el-col>
                 </el-row>
@@ -756,6 +801,87 @@ function generateDeviceDetail() {
   ElMessage.success('已生成设备详细信息');
 }
 
+// 生成随机十六进制字符串
+function randomHex(length) {
+  const chars = '0123456789abcdef';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}
+
+// 生成 IDFA/IMEI 字符串
+function generateIfaValue() {
+  // 使用带连字符的 UUID 形式，更接近真实 IDFA
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+// 生成 MAC 地址
+function generateMacValue() {
+  const segments = [];
+  for (let i = 0; i < 6; i++) {
+    segments.push(randomHex(2));
+  }
+  return segments.join(':').toUpperCase();
+}
+
+// 生成 Android ID
+function generateAdidValue() {
+  return randomHex(16);
+}
+
+// 设备标识 - 一键生成
+function generateDeviceIdsAll() {
+  const ifa = generateIfaValue();
+  form.device.ifa = ifa;
+  // didmd5 默认生成
+  form.device.didmd5 = randomHex(32);
+  form.device.mac = generateMacValue();
+  form.device.macmd5 = randomHex(32);
+  form.device.adid = generateAdidValue();
+  ElMessage.success('已生成设备标识信息');
+}
+
+// 单字段生成：IDFA/IMEI
+function generateIfa() {
+  const ifa = generateIfaValue();
+  form.device.ifa = ifa;
+  // 如果 didmd5 为空，则默认一并生成
+  if (!form.device.didmd5) {
+    form.device.didmd5 = randomHex(32);
+  }
+  ElMessage.success('已生成 IDFA/IMEI');
+}
+
+// 单字段生成：设备码 MD5
+function generateDidmd5() {
+  form.device.didmd5 = randomHex(32);
+  ElMessage.success('已生成设备码 MD5');
+}
+
+// 单字段生成：MAC
+function generateMac() {
+  form.device.mac = generateMacValue();
+  ElMessage.success('已生成 MAC 地址');
+}
+
+// 单字段生成：MAC MD5
+function generateMacmd5() {
+  form.device.macmd5 = randomHex(32);
+  ElMessage.success('已生成 MAC MD5');
+}
+
+// 单字段生成：Android ID
+function generateAdid() {
+  form.device.adid = generateAdidValue();
+  ElMessage.success('已生成 Android ID');
+}
+
 // 生成示例请求
 function generateSampleRequest() {
   generateRequestId();
@@ -913,11 +1039,40 @@ const responseJsonFormatted = computed(() => {
 // 复制请求JSON
 function copyRequestJson() {
   const json = requestJsonFormatted.value;
-  navigator.clipboard.writeText(json).then(() => {
-    ElMessage.success('已复制到剪贴板');
-  }).catch(() => {
+
+  // 优先使用现代 Clipboard API
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard
+      .writeText(json)
+      .then(() => {
+        ElMessage.success('已复制到剪贴板');
+      })
+      .catch(() => {
+        ElMessage.error('复制失败');
+      });
+    return;
+  }
+
+  // 回退方案：使用 textarea + execCommand
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = json;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const success = document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    if (success) {
+      ElMessage.success('已复制到剪贴板');
+    } else {
+      ElMessage.error('复制失败');
+    }
+  } catch {
     ElMessage.error('复制失败');
-  });
+  }
 }
 
 // 获取点击类型标签
