@@ -112,6 +112,11 @@
           {{ calculateWinRate(scope.row.bidCount, scope.row.winCount) }}%
         </template>
       </el-table-column>
+      <el-table-column label="成本(元)" align="center" prop="cost" min-width="120">
+        <template #default="scope">
+          {{ formatMoney(scope.row.cost) }}
+        </template>
+      </el-table-column>
     </el-table>
 
     <pagination
@@ -170,6 +175,12 @@ function calculateWinRate(bidCount, winCount) {
   if (!bidCount || bidCount === 0) return '0.00';
   const rate = (winCount / bidCount) * 100;
   return rate.toFixed(2);
+}
+
+/** 格式化金额 */
+function formatMoney(num) {
+  if (num === null || num === undefined) return '0.00';
+  return Number(num).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 /** 辅助函数：计算快捷按钮的日期范围 */

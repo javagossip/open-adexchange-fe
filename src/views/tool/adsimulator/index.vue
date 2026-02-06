@@ -1,6 +1,20 @@
 <template>
   <div class="app-container ad-simulator">
-    <el-row :gutter="20">
+    <!-- 模式切换：广告模拟 | 广告引擎诊断 -->
+    <div class="mode-tabs">
+      <el-radio-group v-model="mainMode" size="large" class="mode-switch">
+        <el-radio-button value="simulator">
+          <el-icon><Promotion /></el-icon>
+          广告模拟
+        </el-radio-button>
+        <el-radio-button value="diagnostic">
+          <el-icon><Setting /></el-icon>
+          广告引擎诊断
+        </el-radio-button>
+      </el-radio-group>
+    </div>
+
+    <el-row v-show="mainMode === 'simulator'" :gutter="20">
       <!-- 左侧：请求配置 -->
       <el-col :span="12">
         <el-card class="request-card" shadow="hover">
@@ -523,12 +537,176 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- 广告引擎诊断模式 -->
+    <el-row v-show="mainMode === 'diagnostic'" :gutter="20">
+      <el-col :span="12">
+        <el-card class="request-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <span class="header-title">
+                <el-icon><Setting /></el-icon>
+                诊断配置
+              </span>
+            </div>
+          </template>
+
+          <el-tabs v-model="diagnosticTab" type="border-card" class="diagnostic-tabs">
+            <el-tab-pane name="index-keys" label="构建索引Key">
+              <div class="diagnostic-tip">根据下方广告请求配置构建索引 Key，用于调试广告引擎索引逻辑。</div>
+              <el-button type="primary" :loading="diagLoading.indexKeys" @click="runBuildIndexKeys" class="diagnostic-btn">
+                <el-icon><Key /></el-icon>
+                构建索引 Key
+              </el-button>
+            </el-tab-pane>
+            <el-tab-pane name="match-dsps" label="匹配 DSP">
+              <div class="diagnostic-tip">根据下方广告请求配置，查询能匹配到的 DSP 列表。</div>
+              <el-button type="primary" :loading="diagLoading.matchDsps" @click="runMatchDsps" class="diagnostic-btn">
+                <el-icon><Connection /></el-icon>
+                匹配 DSP
+              </el-button>
+            </el-tab-pane>
+            <el-tab-pane name="cache-inspect" label="检查缓存">
+              <div class="diagnostic-tip">根据 Key 和缓存类型检查缓存数据。</div>
+              <el-form label-width="100px" size="default" class="cache-form">
+                <el-form-item label="缓存 Key">
+                  <el-input v-model="cacheForm.key" placeholder="如 DSP ID、站点 ID、广告位 ID 等" clearable />
+                </el-form-item>
+                <el-form-item label="缓存类型">
+                  <el-select v-model="cacheForm.cacheType" placeholder="选择缓存类型" style="width: 100%">
+                    <el-option label="PUBLISHER (媒体主)" :value="1" />
+                    <el-option label="SITE (站点)" :value="2" />
+                    <el-option label="SITE_AD_PLACEMENT (站点广告位)" :value="3" />
+                    <el-option label="AD_PLACEMENT (广告位)" :value="4" />
+                    <el-option label="DSP" :value="5" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" :loading="diagLoading.cacheInspect" @click="runInspectCache">
+                    <el-icon><Search /></el-icon>
+                    检查缓存
+                  </el-button>
+                </el-form-item>
+              </el-form>
+            </el-tab-pane>
+          </el-tabs>
+
+          <!-- 诊断模式下也显示简化的请求配置（用于 index-keys 和 match-dsps） -->
+          <el-divider v-if="diagnosticTab === 'index-keys' || diagnosticTab === 'match-dsps'" content-position="left">广告请求配置（复用）</el-divider>
+          <div v-if="diagnosticTab === 'index-keys' || diagnosticTab === 'match-dsps'" class="diagnostic-form-wrap">
+            <el-form ref="formRef" :model="form" label-width="100px" size="default" label-position="top">
+              <el-form-item label="曝光对象">
+                <div v-for="(imp, index) in form.imp" :key="index" class="imp-row">
+                  <el-input v-model="imp.tagid" placeholder="广告位ID" size="small" style="width: 200px" />
+                  <el-input v-model="imp.id" placeholder="曝光ID" size="small" style="width: 200px" />
+                </div>
+              </el-form-item>
+              <el-form-item label="流量类型">
+                <el-radio-group v-model="trafficType" size="small">
+                  <el-radio-button value="site">网站</el-radio-button>
+                  <el-radio-button value="app">App</el-radio-button>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item label="设备 UA" prop="device.ua">
+                <el-input v-model="form.device.ua" placeholder="User-Agent" type="textarea" :rows="2" />
+              </el-form-item>
+              <el-form-item label="设备 IP" prop="device.ip">
+                <el-input v-model="form.device.ip" placeholder="IPv4" />
+              </el-form-item>
+              <el-form-item label="设备类型 / 操作系统">
+                <el-select v-model="form.device.deviceType" placeholder="设备类型" size="small" style="width: 120px">
+                  <el-option label="手机" :value="1" />
+                  <el-option label="平板" :value="2" />
+                  <el-option label="PC" :value="3" />
+                </el-select>
+                <el-select v-model="form.device.os" placeholder="OS" size="small" style="width: 120px; margin-left: 8px">
+                  <el-option label="iOS" value="ios" />
+                  <el-option label="Android" value="Android" />
+                  <el-option label="Windows" value="Windows" />
+                  <el-option label="macOS" value="macOS" />
+                </el-select>
+              </el-form-item>
+              <el-button type="primary" plain size="small" @click="generateSampleRequest">
+                <el-icon><MagicStick /></el-icon>
+                生成示例
+              </el-button>
+            </el-form>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="12">
+        <el-card class="response-card diagnostic-result-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <span class="header-title">
+                <el-icon><DataAnalysis /></el-icon>
+                诊断结果
+              </span>
+              <el-tag v-if="diagResultStatus" :type="diagResultStatus === 'success' ? 'success' : 'danger'" size="small">
+                {{ diagResultStatus === 'success' ? '成功' : '失败' }}
+              </el-tag>
+            </div>
+          </template>
+
+          <div v-if="!diagResult && !diagError" class="empty-response">
+            <el-empty description="请执行诊断操作查看结果">
+              <template #image>
+                <el-icon :size="60" color="#c0c4cc"><DataLine /></el-icon>
+              </template>
+            </el-empty>
+          </div>
+          <div v-else-if="diagError" class="error-response">
+            <el-alert :title="diagError" type="error" show-icon :closable="false" />
+          </div>
+          <div v-else class="diagnostic-result">
+            <!-- 索引 Key 结果 -->
+            <template v-if="diagnosticTab === 'index-keys' && diagResult">
+              <el-descriptions :column="1" border size="small">
+                <el-descriptions-item v-if="diagResult.tagIdKeys?.length" label="广告位索引">
+                  <el-tag v-for="(k, i) in diagResult.tagIdKeys" :key="i" size="small" type="info" class="result-tag">{{ k }}</el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item v-if="diagResult.osKeys?.length" label="操作系统索引">
+                  <el-tag v-for="(k, i) in diagResult.osKeys" :key="i" size="small" type="success" class="result-tag">{{ k }}</el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item v-if="diagResult.deviceTypeKeys?.length" label="设备类型索引">
+                  <el-tag v-for="(k, i) in diagResult.deviceTypeKeys" :key="i" size="small" type="warning" class="result-tag">{{ k }}</el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item v-if="diagResult.regionKeys?.length" label="地域索引">
+                  <el-tag v-for="(k, i) in diagResult.regionKeys" :key="i" size="small" type="primary" class="result-tag">{{ k }}</el-tag>
+                </el-descriptions-item>
+              </el-descriptions>
+            </template>
+            <!-- 匹配 DSP 结果 -->
+            <template v-else-if="diagnosticTab === 'match-dsps' && diagResult">
+              <div v-if="Array.isArray(diagResult) && diagResult.length === 0" class="empty-list">未匹配到任何 DSP</div>
+              <el-table v-else-if="Array.isArray(diagResult)" :data="diagResult" size="small" stripe>
+                <el-table-column prop="id" label="ID" width="80" />
+                <el-table-column prop="dspId" label="DSP ID" width="120" />
+                <el-table-column prop="name" label="名称" min-width="120" />
+                <el-table-column prop="status" label="状态" width="80">
+                  <template #default="{ row }">
+                    <el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </template>
+            <!-- 缓存检查结果 / 其他 -->
+            <template v-else>
+              <div class="json-viewer">
+                <pre><code>{{ diagResultJson }}</code></pre>
+              </div>
+            </template>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
 <script setup name="AdSimulator">
 import { ref, reactive, computed } from 'vue';
-import { fetchAd } from '@/api/tool/adsimulator';
+import { fetchAd, buildIndexKeys, inspectCacheData, matchDsps } from '@/api/tool/adsimulator';
 import { ElMessage } from 'element-plus';
 import {
   Edit,
@@ -545,6 +723,9 @@ import {
   CopyDocument,
   DataAnalysis,
   DataLine,
+  Key,
+  Connection,
+  Search,
 } from '@element-plus/icons-vue';
 
 // 表单引用
@@ -553,8 +734,19 @@ const formRef = ref(null);
 // 加载状态
 const loading = ref(false);
 
-// 流量类型
-const trafficType = ref('site');
+// 主模式：广告模拟 | 广告引擎诊断
+const mainMode = ref('simulator');
+
+// 广告引擎诊断
+const diagnosticTab = ref('index-keys');
+const cacheForm = reactive({ key: '', cacheType: 5 });
+const diagLoading = reactive({ indexKeys: false, matchDsps: false, cacheInspect: false });
+const diagResult = ref(null);
+const diagError = ref(null);
+const diagResultStatus = ref(null);
+
+// 流量类型（默认 App 流量）
+const trafficType = ref('app');
 
 // 折叠面板状态
 const activeCollapse = ref(['device-basic']);
@@ -882,20 +1074,40 @@ function generateAdid() {
   ElMessage.success('已生成 Android ID');
 }
 
-// 生成示例请求
+// App 示例数据 - 用于生成示例
+const APP_SAMPLE_VERSIONS = ['1.0.0', '2.3.1', '3.1.5', '4.0.2', '1.8.6'];
+const APP_SAMPLE_TITLES = [
+  '首页信息流', '视频推荐页', '资讯详情', '发现频道', '个人中心',
+  '开屏广告位', 'Banner横幅', '插屏广告', '激励视频', '信息流列表',
+  '搜索结果页', '商品详情', '直播间', '短视频播放', '文章阅读页',
+  '分类列表', '购物车', '订单确认', '消息中心', '设置页',
+  '活动专题', '品牌馆', '会员中心', '客服对话', '地图导航',
+];
+const APP_SAMPLE_KEYWORDS = [
+  '社交,资讯,视频', '电商,购物,促销', '新闻,热点,头条', '娱乐,游戏,直播', '工具,生活,服务',
+  '金融,理财,保险', '教育,学习,课程', '旅游,出行,酒店', '美食,外卖,团购', '健康,医疗,运动',
+  '母婴,亲子,育儿', '汽车,二手车,保养', '房产,装修,家居', '招聘,求职,职场', '摄影,美图,滤镜',
+  '音乐,电台,播客', '阅读,小说,漫画', '天气,日历,闹钟', '输入法,翻译,词典', '安全,清理,加速',
+  '短视频,种草,好物', '直播,打赏,互动', '会员,VIP,订阅', '优惠券,秒杀,拼团',
+];
+
+// 生成示例请求（默认使用 App 流量，自动生成版本号、内容和关键字）
 function generateSampleRequest() {
   generateRequestId();
   form.test = true;
   form.debug = true;
   form.imp = [{ id: generateImpId(), tagid: 'adp-10001' }];
-  trafficType.value = 'site';
-  form.site = {
+  trafficType.value = 'app';
+  form.site = { content: { title: '', keywords: '' } };
+  // 随机生成 App 版本号、内容标题和关键字
+  form.app = {
+    ver: APP_SAMPLE_VERSIONS[Math.floor(Math.random() * APP_SAMPLE_VERSIONS.length)],
     content: {
-      title: '科技新闻 - 人工智能最新动态',
-      keywords: 'AI,人工智能,科技,新闻',
+      title: APP_SAMPLE_TITLES[Math.floor(Math.random() * APP_SAMPLE_TITLES.length)],
+      keywords: APP_SAMPLE_KEYWORDS[Math.floor(Math.random() * APP_SAMPLE_KEYWORDS.length)],
     },
+    ext: {},
   };
-  form.app = { ver: '', content: { title: '', keywords: '' }, ext: {} };
   form.device = {
     ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
     ip: '223.104.63.88',
@@ -928,7 +1140,7 @@ function resetForm() {
   form.test = true;
   form.debug = true;
   form.imp = [{ id: generateImpId(), tagid: '' }];
-  trafficType.value = 'site';
+  trafficType.value = 'app';
   form.site = { content: { title: '', keywords: '' } };
   form.app = { ver: '', content: { title: '', keywords: '' }, ext: {} };
   form.device = {
@@ -1036,6 +1248,90 @@ const responseJsonFormatted = computed(() => {
   }
 });
 
+// 诊断结果 JSON 格式化（用于缓存检查等）
+const diagResultJson = computed(() => {
+  if (!diagResult.value) return '{}';
+  try {
+    return JSON.stringify(diagResult.value, null, 2);
+  } catch {
+    return '{}';
+  }
+});
+
+// 诊断：构建索引 Key
+async function runBuildIndexKeys() {
+  const requestData = buildRequestData();
+  if (!requestData.imp || requestData.imp.length === 0) {
+    ElMessage.warning('请至少配置一个有效的曝光对象（广告位ID必填）');
+    return;
+  }
+  diagLoading.indexKeys = true;
+  diagResult.value = null;
+  diagError.value = null;
+  diagResultStatus.value = null;
+  try {
+    const res = await buildIndexKeys(requestData);
+    diagResult.value = res.data ?? res;
+    diagResultStatus.value = 'success';
+    ElMessage.success('构建成功');
+  } catch (error) {
+    diagError.value = error.message || '未知错误';
+    diagResultStatus.value = 'error';
+    ElMessage.error('构建失败：' + (error.message || '未知错误'));
+  } finally {
+    diagLoading.indexKeys = false;
+  }
+}
+
+// 诊断：匹配 DSP
+async function runMatchDsps() {
+  const requestData = buildRequestData();
+  if (!requestData.imp || requestData.imp.length === 0) {
+    ElMessage.warning('请至少配置一个有效的曝光对象（广告位ID必填）');
+    return;
+  }
+  diagLoading.matchDsps = true;
+  diagResult.value = null;
+  diagError.value = null;
+  diagResultStatus.value = null;
+  try {
+    const res = await matchDsps(requestData);
+    diagResult.value = res.data ?? res;
+    diagResultStatus.value = 'success';
+    ElMessage.success('匹配成功');
+  } catch (error) {
+    diagError.value = error.message || '未知错误';
+    diagResultStatus.value = 'error';
+    ElMessage.error('匹配失败：' + (error.message || '未知错误'));
+  } finally {
+    diagLoading.matchDsps = false;
+  }
+}
+
+// 诊断：检查缓存
+async function runInspectCache() {
+  if (!cacheForm.key?.trim()) {
+    ElMessage.warning('请输入缓存 Key');
+    return;
+  }
+  diagLoading.cacheInspect = true;
+  diagResult.value = null;
+  diagError.value = null;
+  diagResultStatus.value = null;
+  try {
+    const res = await inspectCacheData(cacheForm.key.trim(), cacheForm.cacheType);
+    diagResult.value = res.data ?? res;
+    diagResultStatus.value = 'success';
+    ElMessage.success('检查成功');
+  } catch (error) {
+    diagError.value = error.message || '未知错误';
+    diagResultStatus.value = 'error';
+    ElMessage.error('检查失败：' + (error.message || '未知错误'));
+  } finally {
+    diagLoading.cacheInspect = false;
+  }
+}
+
 // 复制请求JSON
 function copyRequestJson() {
   const json = requestJsonFormatted.value;
@@ -1126,6 +1422,68 @@ generateRequestId();
 .ad-simulator {
   padding: 20px;
   min-height: calc(100vh - 100px);
+
+  .mode-tabs {
+    margin-bottom: 20px;
+
+    .mode-switch {
+      :deep(.el-radio-button__inner) {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+    }
+  }
+
+  .diagnostic-tabs {
+    border: none;
+    box-shadow: none;
+
+    :deep(.el-tabs__header) {
+      margin-bottom: 16px;
+    }
+
+    .diagnostic-tip {
+      font-size: 13px;
+      color: #909399;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    .diagnostic-btn {
+      margin-bottom: 16px;
+    }
+
+    .cache-form {
+      max-width: 400px;
+    }
+
+    .diagnostic-form-wrap {
+      margin-top: 16px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+
+      .imp-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+    }
+  }
+
+  .diagnostic-result {
+    .result-tag {
+      margin: 2px 4px 2px 0;
+    }
+
+    .empty-list {
+      color: #909399;
+      padding: 20px;
+      text-align: center;
+    }
+  }
 
   .request-card,
   .preview-card,
