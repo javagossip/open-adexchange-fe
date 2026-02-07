@@ -95,10 +95,17 @@
       <el-table-column
         label="操作"
         align="center"
-        width="120"
+        width="180"
         class-name="small-padding fixed-width"
       >
         <template #default="scope">
+          <el-button
+            link
+            type="primary"
+            icon="Edit"
+            @click="handleUpdate(scope.row)"
+            >修改</el-button
+          >
           <el-button
             link
             type="danger"
@@ -118,8 +125,8 @@
       @pagination="getList"
     />
 
-    <!-- 添加DSP广告位映射对话框 -->
-    <el-dialog title="新增DSP广告位映射" v-model="open" width="600px" append-to-body>
+    <!-- 新增/修改DSP广告位映射对话框 -->
+    <el-dialog :title="dialogTitle" v-model="open" width="600px" append-to-body>
       <el-form ref="mappingRef" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="DSP" prop="dspId">
           <el-select
@@ -184,6 +191,7 @@
 import {
   pageDspPlacementMappings,
   addDspPlacementMapping,
+  updateDspPlacementMapping,
   delDspPlacementMapping,
   searchDsp,
 } from '@/api/dsp/dsp';
@@ -202,6 +210,9 @@ const showSearch = ref(true);
 const ids = ref([]);
 const multiple = ref(true);
 const total = ref(0);
+
+/** 对话框标题（新增/修改） */
+const dialogTitle = computed(() => (form.value.id ? '修改DSP广告位映射' : '新增DSP广告位映射'));
 
 const data = reactive({
   form: {},
@@ -303,6 +314,7 @@ function cancel() {
 /** 表单重置 */
 function reset() {
   form.value = {
+    id: undefined,
     dspId: undefined,
     siteAdPlacementId: undefined,
     dspSlotId: undefined,
@@ -334,15 +346,54 @@ function handleAdd() {
   open.value = true;
 }
 
+/** 修改按钮操作 */
+function handleUpdate(row) {
+  reset();
+  const id = row.id;
+  form.value = {
+    id,
+    dspId: row.dspId,
+    siteAdPlacementId: row.siteAdPlacementId,
+    dspSlotId: row.dspSlotId,
+  };
+  // 预填下拉选项，便于展示当前选中的 DSP 和媒体广告位
+  if (row.dspId && row.dspCode != null) {
+    dspOptions.value = [{ id: row.dspId, name: row.dspName || '', dspCode: row.dspCode || '' }];
+  }
+  if (row.siteAdPlacementId && row.siteAdPlacementCode != null) {
+    siteAdPlacementOptions.value = [
+      {
+        id: row.siteAdPlacementId,
+        name: row.siteAdPlacementName || '',
+        code: row.siteAdPlacementCode || '',
+      },
+    ];
+  }
+  open.value = true;
+}
+
 /** 提交按钮 */
 function submitForm() {
   proxy.$refs['mappingRef'].validate((valid) => {
     if (valid) {
-      addDspPlacementMapping(form.value).then((response) => {
-        proxy.$modal.msgSuccess('新增成功');
-        open.value = false;
-        getList();
-      });
+      const submitData = {
+        dspId: form.value.dspId,
+        siteAdPlacementId: form.value.siteAdPlacementId,
+        dspSlotId: form.value.dspSlotId,
+      };
+      if (form.value.id) {
+        updateDspPlacementMapping(form.value.id, submitData).then(() => {
+          proxy.$modal.msgSuccess('修改成功');
+          open.value = false;
+          getList();
+        });
+      } else {
+        addDspPlacementMapping(submitData).then(() => {
+          proxy.$modal.msgSuccess('新增成功');
+          open.value = false;
+          getList();
+        });
+      }
     }
   });
 }

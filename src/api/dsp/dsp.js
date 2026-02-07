@@ -111,6 +111,15 @@ export function addDspPlacementMapping(data) {
   });
 }
 
+// 修改DSP广告位映射
+export function updateDspPlacementMapping(id, data) {
+  return request({
+    url: '/v1/dsps/placement-mappings/' + id,
+    method: 'put',
+    data: data,
+  });
+}
+
 // 删除DSP广告位映射
 export function delDspPlacementMapping(id) {
   return request({

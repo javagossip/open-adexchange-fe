@@ -69,19 +69,6 @@
     <el-table v-loading="loading" :data="dspList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="id" width="80" />
-      <el-table-column label="Logo" align="center" prop="brandLogo" width="90">
-        <template #default="scope">
-          <el-image
-            v-if="scope.row.brandLogo"
-            :src="getLogoUrl(scope.row.brandLogo)"
-            style="width: 40px; height: 40px"
-            fit="contain"
-            :preview-src-list="[getLogoUrl(scope.row.brandLogo)]"
-            preview-teleported
-          />
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
       <el-table-column
         label="DSP名称"
         align="center"
@@ -95,12 +82,6 @@
         :show-overflow-tooltip="true"
       />
       <el-table-column
-        label="Win通知端点"
-        align="center"
-        prop="winNoticeEndpoint"
-        :show-overflow-tooltip="true"
-      />
-      <el-table-column
         label="结算方式"
         align="center"
         prop="at"
@@ -110,18 +91,6 @@
           <span v-if="scope.row.at === 1">一价结算</span>
           <span v-else-if="scope.row.at === 2">二价结算</span>
           <span v-else>-</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="联系人"
-        align="center"
-        width="150"
-      >
-        <template #default="scope">
-          <div>{{ scope.row.contactName || '-' }}</div>
-          <div style="font-size: 12px; color: #909399;">
-            {{ scope.row.contactPhone || scope.row.contactEmail || '' }}
-          </div>
         </template>
       </el-table-column>
       <el-table-column
@@ -346,9 +315,6 @@
         </el-form-item>
         <el-form-item label="Bid端点" prop="bidEndpoint">
           <el-input v-model="form.bidEndpoint" placeholder="请输入Bid端点URL，如：https://example.com/bid" />
-        </el-form-item>
-        <el-form-item label="Win通知端点" prop="winNoticeEndpoint">
-          <el-input v-model="form.winNoticeEndpoint" placeholder="请输入Win通知端点URL，如：https://example.com/win" />
         </el-form-item>
         <el-form-item label="结算方式" prop="at">
           <el-radio-group v-model="form.at">
@@ -583,10 +549,6 @@ const data = reactive({
     name: [{ required: true, message: 'DSP名称不能为空', trigger: 'blur' }],
     bidEndpoint: [
       { required: true, message: 'Bid端点不能为空', trigger: 'blur' },
-      { type: 'url', message: '请输入有效的URL地址', trigger: 'blur' },
-    ],
-    winNoticeEndpoint: [
-      { required: true, message: 'Win通知端点不能为空', trigger: 'blur' },
       { type: 'url', message: '请输入有效的URL地址', trigger: 'blur' },
     ],
     contactEmail: [
