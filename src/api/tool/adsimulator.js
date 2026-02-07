@@ -15,7 +15,7 @@ export function fetchAd(data) {
 
 /**
  * 广告引擎诊断 - 根据广告请求构建索引key
- * @param {Object} data - 广告请求对象 AdGetRequest
+ * @param {Object} data - BuildIndexRequest { adSlotId, os, deviceType, ip }
  */
 export function buildIndexKeys(data) {
   return request({
@@ -42,7 +42,7 @@ export function inspectCacheData(key, cacheType) {
 
 /**
  * 广告引擎诊断 - 根据广告请求匹配对应的 DSP
- * @param {Object} data - 广告请求对象 AdGetRequest
+ * @param {Object} data - BuildIndexRequest { adSlotId, os, deviceType, ip }
  */
 export function matchDsps(data) {
   return request({

@@ -78,6 +78,21 @@
         </template>
       </el-table-column>
       <el-table-column label="媒体编码" align="center" prop="publisherCode" min-width="120" />
+      <el-table-column label="请求数" align="center" prop="reqCount" min-width="120">
+        <template #default="scope">
+          {{ formatNumber(scope.row.reqCount) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="竞价数" align="center" prop="bidCount" min-width="120">
+        <template #default="scope">
+          {{ formatNumber(scope.row.bidCount) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="中标数" align="center" prop="winCount" min-width="120">
+        <template #default="scope">
+          {{ formatNumber(scope.row.winCount) }}
+        </template>
+      </el-table-column>
       <el-table-column label="曝光量" align="center" prop="impCount" min-width="120">
         <template #default="scope">
           {{ formatNumber(scope.row.impCount) }}

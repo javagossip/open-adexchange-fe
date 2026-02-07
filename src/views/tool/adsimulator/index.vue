@@ -553,18 +553,70 @@
 
           <el-tabs v-model="diagnosticTab" type="border-card" class="diagnostic-tabs">
             <el-tab-pane name="index-keys" label="构建索引Key">
-              <div class="diagnostic-tip">根据下方广告请求配置构建索引 Key，用于调试广告引擎索引逻辑。</div>
-              <el-button type="primary" :loading="diagLoading.indexKeys" @click="runBuildIndexKeys" class="diagnostic-btn">
-                <el-icon><Key /></el-icon>
-                构建索引 Key
-              </el-button>
+              <div class="diagnostic-tip">输入广告位、操作系统、设备类型和 IP，构建索引 Key 用于调试广告引擎索引逻辑。</div>
+              <el-form :model="buildIndexForm" label-width="90px" size="default" class="build-index-form">
+                <el-form-item label="广告位ID" prop="adSlotId">
+                  <el-input v-model="buildIndexForm.adSlotId" placeholder="媒体广告位ID，如 adp-10001" clearable />
+                </el-form-item>
+                <el-form-item label="操作系统" prop="os">
+                  <el-select v-model="buildIndexForm.os" placeholder="选择操作系统" style="width: 100%" allow-clear>
+                    <el-option label="iOS" value="ios" />
+                    <el-option label="Android" value="Android" />
+                    <el-option label="Windows" value="Windows" />
+                    <el-option label="macOS" value="macOS" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="设备类型" prop="deviceType">
+                  <el-select v-model="buildIndexForm.deviceType" placeholder="选择设备类型" style="width: 100%" allow-clear>
+                    <el-option label="PHONE (手机)" value="PHONE" />
+                    <el-option label="PAD (平板)" value="PAD" />
+                    <el-option label="PC" value="PC" />
+                    <el-option label="TV (电视)" value="TV" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="用户IP" prop="ip">
+                  <el-input v-model="buildIndexForm.ip" placeholder="如 223.104.63.88" clearable />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" :loading="diagLoading.indexKeys" @click="runBuildIndexKeys">
+                    <el-icon><Key /></el-icon>
+                    构建索引 Key
+                  </el-button>
+                </el-form-item>
+              </el-form>
             </el-tab-pane>
             <el-tab-pane name="match-dsps" label="匹配 DSP">
-              <div class="diagnostic-tip">根据下方广告请求配置，查询能匹配到的 DSP 列表。</div>
-              <el-button type="primary" :loading="diagLoading.matchDsps" @click="runMatchDsps" class="diagnostic-btn">
-                <el-icon><Connection /></el-icon>
-                匹配 DSP
-              </el-button>
+              <div class="diagnostic-tip">输入广告位、操作系统、设备类型和 IP，查询能匹配到的 DSP 列表。</div>
+              <el-form :model="buildIndexForm" label-width="90px" size="default" class="build-index-form">
+                <el-form-item label="广告位ID" prop="adSlotId">
+                  <el-input v-model="buildIndexForm.adSlotId" placeholder="媒体广告位ID，如 adp-10001" clearable />
+                </el-form-item>
+                <el-form-item label="操作系统" prop="os">
+                  <el-select v-model="buildIndexForm.os" placeholder="选择操作系统" style="width: 100%" allow-clear>
+                    <el-option label="iOS" value="ios" />
+                    <el-option label="Android" value="Android" />
+                    <el-option label="Windows" value="Windows" />
+                    <el-option label="macOS" value="macOS" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="设备类型" prop="deviceType">
+                  <el-select v-model="buildIndexForm.deviceType" placeholder="选择设备类型" style="width: 100%" allow-clear>
+                    <el-option label="PHONE (手机)" value="PHONE" />
+                    <el-option label="PAD (平板)" value="PAD" />
+                    <el-option label="PC" value="PC" />
+                    <el-option label="TV (电视)" value="TV" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="用户IP" prop="ip">
+                  <el-input v-model="buildIndexForm.ip" placeholder="如 223.104.63.88" clearable />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" :loading="diagLoading.matchDsps" @click="runMatchDsps">
+                    <el-icon><Connection /></el-icon>
+                    匹配 DSP
+                  </el-button>
+                </el-form-item>
+              </el-form>
             </el-tab-pane>
             <el-tab-pane name="cache-inspect" label="检查缓存">
               <div class="diagnostic-tip">根据 Key 和缓存类型检查缓存数据。</div>
@@ -590,48 +642,6 @@
               </el-form>
             </el-tab-pane>
           </el-tabs>
-
-          <!-- 诊断模式下也显示简化的请求配置（用于 index-keys 和 match-dsps） -->
-          <el-divider v-if="diagnosticTab === 'index-keys' || diagnosticTab === 'match-dsps'" content-position="left">广告请求配置（复用）</el-divider>
-          <div v-if="diagnosticTab === 'index-keys' || diagnosticTab === 'match-dsps'" class="diagnostic-form-wrap">
-            <el-form ref="formRef" :model="form" label-width="100px" size="default" label-position="top">
-              <el-form-item label="曝光对象">
-                <div v-for="(imp, index) in form.imp" :key="index" class="imp-row">
-                  <el-input v-model="imp.tagid" placeholder="广告位ID" size="small" style="width: 200px" />
-                  <el-input v-model="imp.id" placeholder="曝光ID" size="small" style="width: 200px" />
-                </div>
-              </el-form-item>
-              <el-form-item label="流量类型">
-                <el-radio-group v-model="trafficType" size="small">
-                  <el-radio-button value="site">网站</el-radio-button>
-                  <el-radio-button value="app">App</el-radio-button>
-                </el-radio-group>
-              </el-form-item>
-              <el-form-item label="设备 UA" prop="device.ua">
-                <el-input v-model="form.device.ua" placeholder="User-Agent" type="textarea" :rows="2" />
-              </el-form-item>
-              <el-form-item label="设备 IP" prop="device.ip">
-                <el-input v-model="form.device.ip" placeholder="IPv4" />
-              </el-form-item>
-              <el-form-item label="设备类型 / 操作系统">
-                <el-select v-model="form.device.deviceType" placeholder="设备类型" size="small" style="width: 120px">
-                  <el-option label="手机" :value="1" />
-                  <el-option label="平板" :value="2" />
-                  <el-option label="PC" :value="3" />
-                </el-select>
-                <el-select v-model="form.device.os" placeholder="OS" size="small" style="width: 120px; margin-left: 8px">
-                  <el-option label="iOS" value="ios" />
-                  <el-option label="Android" value="Android" />
-                  <el-option label="Windows" value="Windows" />
-                  <el-option label="macOS" value="macOS" />
-                </el-select>
-              </el-form-item>
-              <el-button type="primary" plain size="small" @click="generateSampleRequest">
-                <el-icon><MagicStick /></el-icon>
-                生成示例
-              </el-button>
-            </el-form>
-          </div>
         </el-card>
       </el-col>
 
@@ -739,6 +749,12 @@ const mainMode = ref('simulator');
 
 // 广告引擎诊断
 const diagnosticTab = ref('index-keys');
+const buildIndexForm = reactive({
+  adSlotId: '',
+  os: 'ios',
+  deviceType: 'PHONE',
+  ip: '223.104.63.88',
+});
 const cacheForm = reactive({ key: '', cacheType: 5 });
 const diagLoading = reactive({ indexKeys: false, matchDsps: false, cacheInspect: false });
 const diagResult = ref(null);
@@ -1258,11 +1274,20 @@ const diagResultJson = computed(() => {
   }
 });
 
+// 构建 BuildIndexRequest 数据
+function buildDiagnosticData() {
+  return {
+    adSlotId: buildIndexForm.adSlotId || undefined,
+    os: buildIndexForm.os || undefined,
+    deviceType: buildIndexForm.deviceType || undefined,
+    ip: buildIndexForm.ip || undefined,
+  };
+}
+
 // 诊断：构建索引 Key
 async function runBuildIndexKeys() {
-  const requestData = buildRequestData();
-  if (!requestData.imp || requestData.imp.length === 0) {
-    ElMessage.warning('请至少配置一个有效的曝光对象（广告位ID必填）');
+  if (!buildIndexForm.adSlotId?.trim()) {
+    ElMessage.warning('请输入广告位ID');
     return;
   }
   diagLoading.indexKeys = true;
@@ -1270,7 +1295,7 @@ async function runBuildIndexKeys() {
   diagError.value = null;
   diagResultStatus.value = null;
   try {
-    const res = await buildIndexKeys(requestData);
+    const res = await buildIndexKeys(buildDiagnosticData());
     diagResult.value = res.data ?? res;
     diagResultStatus.value = 'success';
     ElMessage.success('构建成功');
@@ -1285,9 +1310,8 @@ async function runBuildIndexKeys() {
 
 // 诊断：匹配 DSP
 async function runMatchDsps() {
-  const requestData = buildRequestData();
-  if (!requestData.imp || requestData.imp.length === 0) {
-    ElMessage.warning('请至少配置一个有效的曝光对象（广告位ID必填）');
+  if (!buildIndexForm.adSlotId?.trim()) {
+    ElMessage.warning('请输入广告位ID');
     return;
   }
   diagLoading.matchDsps = true;
@@ -1295,7 +1319,7 @@ async function runMatchDsps() {
   diagError.value = null;
   diagResultStatus.value = null;
   try {
-    const res = await matchDsps(requestData);
+    const res = await matchDsps(buildDiagnosticData());
     diagResult.value = res.data ?? res;
     diagResultStatus.value = 'success';
     ElMessage.success('匹配成功');
@@ -1458,18 +1482,8 @@ generateRequestId();
       max-width: 400px;
     }
 
-    .diagnostic-form-wrap {
-      margin-top: 16px;
-      padding: 16px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border: 1px solid #e9ecef;
-
-      .imp-row {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 8px;
-      }
+    .build-index-form {
+      max-width: 400px;
     }
   }
 
