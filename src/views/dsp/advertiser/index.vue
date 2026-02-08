@@ -16,17 +16,6 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="公司类型" prop="companyType">
-        <el-select
-          v-model="queryParams.companyType"
-          placeholder="公司类型"
-          clearable
-          style="width: 240px"
-        >
-          <el-option label="个人" value="individual" />
-          <el-option label="公司" value="company" />
-        </el-select>
-      </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select
           v-model="queryParams.status"
@@ -91,37 +80,6 @@
         align="center"
         prop="companyName"
         :show-overflow-tooltip="true"
-      />
-      <el-table-column label="公司类型" align="center" prop="companyType" width="100">
-        <template #default="scope">
-          <span>{{ getCompanyTypeLabel(scope.row.companyType) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="所在国家"
-        align="center"
-        prop="country"
-        width="100"
-      />
-      <el-table-column
-        label="联系人姓名"
-        align="center"
-        prop="contactName"
-        :show-overflow-tooltip="true"
-        width="120"
-      />
-      <el-table-column
-        label="联系人邮箱"
-        align="center"
-        prop="contactEmail"
-        :show-overflow-tooltip="true"
-      />
-      <el-table-column
-        label="联系人电话"
-        align="center"
-        prop="contactPhone"
-        :show-overflow-tooltip="true"
-        width="130"
       />
       <el-table-column label="审核状态" align="center" prop="auditStatus" width="120">
         <template #default="scope">
@@ -231,39 +189,6 @@
         <el-form-item label="公司全称" prop="companyName">
           <el-input v-model="form.companyName" placeholder="请输入公司全称" />
         </el-form-item>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="公司类型" prop="companyType">
-              <el-select v-model="form.companyType" placeholder="请选择公司类型" style="width: 100%">
-                <el-option label="个人" value="individual" />
-                <el-option label="公司" value="company" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="所在国家" prop="country">
-              <el-select
-                v-model="form.country"
-                placeholder="请选择或搜索国家"
-                filterable
-                remote
-                :remote-method="searchCountries"
-                clearable
-                :loading="countryLoading"
-                @focus="handleCountryFocus"
-                @visible-change="handleCountryVisibleChange"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="country in countryOptions"
-                  :key="country.value"
-                  :label="country.label"
-                  :value="country.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
         <el-form-item label="统一社会信用代码" prop="businessLicenseNo">
           <el-input v-model="form.businessLicenseNo" placeholder="请输入统一社会信用代码" />
         </el-form-item>
@@ -491,12 +416,6 @@
             <el-descriptions-item label="公司全称">
               {{ auditDetail.advertiser?.companyName || '-' }}
             </el-descriptions-item>
-            <el-descriptions-item label="公司类型">
-              {{ getCompanyTypeLabel(auditDetail.advertiser?.companyType) }}
-            </el-descriptions-item>
-            <el-descriptions-item label="所在国家">
-              {{ auditDetail.advertiser?.country || '-' }}
-            </el-descriptions-item>
             <el-descriptions-item label="统一社会信用代码">
               {{ auditDetail.advertiser?.businessLicenseNo || '-' }}
             </el-descriptions-item>
@@ -645,14 +564,11 @@ import {
   deleteAdvertiserLicense,
 } from '@/api/dsp/advertiser';
 import { uploadFile } from '@/api/file';
-import { getCountries } from '@/api/system/dict';
 
 const { proxy } = getCurrentInstance();
 const baseUrl = import.meta.env.VITE_APP_BASE_API;
 
 const advertiserList = ref([]);
-const countryOptions = ref([]);
-const countryLoading = ref(false);
 const open = ref(false);
 const qualificationOpen = ref(false);
 const licenseDialogOpen = ref(false);
@@ -676,14 +592,11 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     advertiserName: undefined,
-    companyType: undefined,
     status: undefined,
   },
   rules: {
     advertiserName: [{ required: true, message: '广告主名称不能为空', trigger: 'blur' }],
     companyName: [{ required: true, message: '公司全称不能为空', trigger: 'blur' }],
-    companyType: [{ required: true, message: '公司类型不能为空', trigger: 'change' }],
-    country: [{ required: true, message: '所在国家不能为空', trigger: 'change' }],
     businessLicenseNo: [{ required: true, message: '统一社会信用代码不能为空', trigger: 'blur' }],
     legalPersonName: [{ required: true, message: '法人姓名不能为空', trigger: 'blur' }],
     registeredAddress: [],
@@ -740,16 +653,6 @@ const auditFormData = reactive({
 });
 
 const { form: auditForm, rules: auditRules } = toRefs(auditFormData);
-
-/** 获取公司类型标签 */
-function getCompanyTypeLabel(type) {
-  if (!type) return '-';
-  const typeMap = {
-    individual: '个人',
-    company: '公司',
-  };
-  return typeMap[type] || type;
-}
 
 /** 获取文件URL */
 function getFileUrl(url) {
@@ -822,40 +725,6 @@ async function handleLicenseFileUpload(options) {
   }
 }
 
-/** 加载国家/地区列表 */
-function loadCountries(query = '') {
-  countryLoading.value = true;
-  getCountries(query || undefined)
-    .then((response) => {
-      const data = response.data || response;
-      countryOptions.value = Array.isArray(data) ? data : [];
-    })
-    .finally(() => {
-      countryLoading.value = false;
-    });
-}
-
-/** 搜索国家/地区（用于远程搜索） */
-function searchCountries(query) {
-  loadCountries(query);
-}
-
-/** 国家/地区下拉框获取焦点 */
-function handleCountryFocus() {
-  if (countryOptions.value.length === 0) {
-    // 首次打开下拉框时，加载所有国家
-    loadCountries();
-  }
-}
-
-/** 国家/地区下拉框可见性变化 */
-function handleCountryVisibleChange(visible) {
-  if (visible && countryOptions.value.length === 0) {
-    // 打开下拉框时，如果没有数据则加载所有国家
-    loadCountries();
-  }
-}
-
 /** 查询广告主列表 */
 function getList() {
   loading.value = true;
@@ -901,8 +770,6 @@ function reset() {
     agencyId: undefined,
     advertiserName: undefined,
     companyName: undefined,
-    companyType: undefined,
-    country: undefined,
     businessLicenseNo: undefined,
     legalPersonName: undefined,
     registeredAddress: undefined,

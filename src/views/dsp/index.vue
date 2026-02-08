@@ -76,9 +76,10 @@
         :show-overflow-tooltip="true"
       />
       <el-table-column
-        label="Bid端点"
+        label="DSP编码"
         align="center"
-        prop="bidEndpoint"
+        prop="dspId"
+        width="120"
         :show-overflow-tooltip="true"
       />
       <el-table-column
