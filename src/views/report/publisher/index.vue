@@ -38,13 +38,14 @@
 
           <el-date-picker
             v-model="dateRange"
-            value-format="YYYYMMDD"
-            type="daterange"
+            value-format="YYYYMMDDHH"
+            type="datetimerange"
             range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
+            start-placeholder="开始日期时间"
+            end-placeholder="结束日期时间"
+            format="YYYY-MM-DD HH:00"
             @change="handleCustomDateChange"
-            style="margin-left: 10px; width: 300px"
+            style="margin-left: 10px; width: 400px"
           ></el-date-picker>
         </div>
       </el-form-item>
@@ -179,28 +180,28 @@ function selectDateRange(tabName) {
 
   switch (tabName) {
     case 'today':
-      start = dayjs().format('YYYYMMDD');
-      end = dayjs().format('YYYYMMDD');
+      start = dayjs().startOf('day').format('YYYYMMDDHH');
+      end = dayjs().hour(23).startOf('hour').format('YYYYMMDDHH');
       break;
     case 'yesterday':
-      start = dayjs().subtract(1, 'day').format('YYYYMMDD');
-      end = dayjs().subtract(1, 'day').format('YYYYMMDD');
+      start = dayjs().subtract(1, 'day').startOf('day').format('YYYYMMDDHH');
+      end = dayjs().subtract(1, 'day').hour(23).startOf('hour').format('YYYYMMDDHH');
       break;
     case 'this_week':
-      start = dayjs().startOf('week').add(1, 'day').format('YYYYMMDD');
-      end = dayjs().format('YYYYMMDD');
+      start = dayjs().startOf('week').add(1, 'day').startOf('day').format('YYYYMMDDHH');
+      end = dayjs().hour(23).startOf('hour').format('YYYYMMDDHH');
       break;
     case 'last_week':
-      start = dayjs().subtract(1, 'week').startOf('week').add(1, 'day').format('YYYYMMDD');
-      end = dayjs().subtract(1, 'week').endOf('week').add(1, 'day').format('YYYYMMDD');
+      start = dayjs().subtract(1, 'week').startOf('week').add(1, 'day').startOf('day').format('YYYYMMDDHH');
+      end = dayjs().subtract(1, 'week').endOf('week').hour(23).startOf('hour').format('YYYYMMDDHH');
       break;
     case 'this_month':
-      start = dayjs().startOf('month').format('YYYYMMDD');
-      end = dayjs().format('YYYYMMDD');
+      start = dayjs().startOf('month').startOf('day').format('YYYYMMDDHH');
+      end = dayjs().hour(23).startOf('hour').format('YYYYMMDDHH');
       break;
     case 'last_month':
-      start = dayjs().subtract(1, 'month').startOf('month').format('YYYYMMDD');
-      end = dayjs().subtract(1, 'month').endOf('month').format('YYYYMMDD');
+      start = dayjs().subtract(1, 'month').startOf('month').startOf('day').format('YYYYMMDDHH');
+      end = dayjs().subtract(1, 'month').endOf('month').hour(23).startOf('hour').format('YYYYMMDDHH');
       break;
     default:
       start = '';
@@ -232,7 +233,7 @@ function getList() {
 
   loading.value = true;
 
-  // 设置日期参数
+  // 设置日期参数（格式：YYYYMMDDHH，如 2026020908）
   queryParams.value.startDate = parseInt(dateRange.value[0]);
   queryParams.value.endDate = parseInt(dateRange.value[1]);
 
