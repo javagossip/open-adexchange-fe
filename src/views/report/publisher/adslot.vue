@@ -71,30 +71,30 @@
     </el-row>
 
     <el-table v-loading="loading" :data="reportList" border stripe>
-      <el-table-column label="广告位编码" align="center" prop="adSlotId" min-width="150" />
-      <el-table-column label="广告位名称" align="center" prop="adSlotName" min-width="150" />
-      <el-table-column label="站点/APP" align="center" prop="siteName" min-width="120" />
-      <el-table-column label="曝光量" align="center" prop="impCount" min-width="120">
+      <el-table-column label="广告位编码" align="center" prop="adSlotId" min-width="150" sortable />
+      <el-table-column label="广告位名称" align="center" prop="adSlotName" min-width="150" sortable />
+      <el-table-column label="站点/APP" align="center" prop="siteName" min-width="120" sortable />
+      <el-table-column label="曝光量" align="center" prop="impCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.impCount) }}
         </template>
       </el-table-column>
-      <el-table-column label="点击量" align="center" prop="clickCount" min-width="120">
+      <el-table-column label="点击量" align="center" prop="clickCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.clickCount) }}
         </template>
       </el-table-column>
-      <el-table-column label="点击率" align="center" prop="clickRate" min-width="100">
+      <el-table-column label="点击率" align="center" prop="clickRate" min-width="100" sortable>
         <template #default="scope">
           {{ scope.row.clickRate }}%
         </template>
       </el-table-column>
-      <el-table-column label="收入(元)" align="center" prop="revenue" min-width="120">
+      <el-table-column label="收入(元)" align="center" prop="revenue" min-width="120" sortable>
         <template #default="scope">
           {{ formatMoney(scope.row.revenue) }}
         </template>
       </el-table-column>
-      <el-table-column label="ADX平台收益(元)" align="center" prop="adxRevenue" min-width="140">
+      <el-table-column label="ADX平台收益(元)" align="center" prop="adxRevenue" min-width="140" sortable>
         <template #default="scope">
           {{ formatMoney(scope.row.adxRevenue) }}
         </template>

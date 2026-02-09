@@ -70,50 +70,50 @@
     </el-row>
 
     <el-table v-loading="loading" :data="reportList" border stripe>
-      <el-table-column label="媒体名称" align="center" min-width="150">
+      <el-table-column label="媒体名称" align="center" prop="publisherName" min-width="150" sortable>
         <template #default="scope">
           <el-link type="primary" @click="handleDrillDown(scope.row)">
             {{ scope.row.publisherName }}
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column label="媒体编码" align="center" prop="publisherCode" min-width="120" />
-      <el-table-column label="请求数" align="center" prop="reqCount" min-width="120">
+      <el-table-column label="媒体编码" align="center" prop="publisherCode" min-width="120" sortable />
+      <el-table-column label="请求数" align="center" prop="reqCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.reqCount) }}
         </template>
       </el-table-column>
-      <el-table-column label="竞价数" align="center" prop="bidCount" min-width="120">
+      <el-table-column label="竞价数" align="center" prop="bidCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.bidCount) }}
         </template>
       </el-table-column>
-      <el-table-column label="中标数" align="center" prop="winCount" min-width="120">
+      <el-table-column label="中标数" align="center" prop="winCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.winCount) }}
         </template>
       </el-table-column>
-      <el-table-column label="曝光量" align="center" prop="impCount" min-width="120">
+      <el-table-column label="曝光量" align="center" prop="impCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.impCount) }}
         </template>
       </el-table-column>
-      <el-table-column label="点击量" align="center" prop="clickCount" min-width="120">
+      <el-table-column label="点击量" align="center" prop="clickCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.clickCount) }}
         </template>
       </el-table-column>
-      <el-table-column label="点击率" align="center" prop="clickRate" min-width="100">
+      <el-table-column label="点击率" align="center" prop="clickRate" min-width="100" sortable>
         <template #default="scope">
           {{ scope.row.clickRate }}%
         </template>
       </el-table-column>
-      <el-table-column label="媒体收入(元)" align="center" prop="revenue" min-width="120">
+      <el-table-column label="媒体收入(元)" align="center" prop="revenue" min-width="120" sortable>
         <template #default="scope">
           {{ formatMoney(scope.row.revenue) }}
         </template>
       </el-table-column>
-      <el-table-column label="ADX平台收益(元)" align="center" prop="adxRevenue" min-width="140">
+      <el-table-column label="ADX平台收益(元)" align="center" prop="adxRevenue" min-width="140" sortable>
         <template #default="scope">
           {{ formatMoney(scope.row.adxRevenue) }}
         </template>

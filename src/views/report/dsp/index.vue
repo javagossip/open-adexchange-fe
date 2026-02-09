@@ -80,39 +80,39 @@
     </el-row>
 
     <el-table v-loading="loading" :data="reportList" border stripe>
-      <el-table-column label="DSP名称" align="center" prop="dspName" min-width="150" />
-      <el-table-column label="DSP编码" align="center" prop="dspCode" min-width="120" />
-      <el-table-column label="曝光量" align="center" prop="impCount" min-width="120">
+      <el-table-column label="DSP名称" align="center" prop="dspName" min-width="150" sortable />
+      <el-table-column label="DSP编码" align="center" prop="dspCode" min-width="120" sortable />
+      <el-table-column label="曝光量" align="center" prop="impCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.impCount) }}
         </template>
       </el-table-column>
-      <el-table-column label="点击量" align="center" prop="clkCount" min-width="120">
+      <el-table-column label="点击量" align="center" prop="clkCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.clkCount) }}
         </template>
       </el-table-column>
-      <el-table-column label="点击率" align="center" prop="clickRate" min-width="100">
+      <el-table-column label="点击率" align="center" prop="clickRate" min-width="100" sortable>
         <template #default="scope">
           {{ calculateClickRate(scope.row.impCount, scope.row.clkCount) }}%
         </template>
       </el-table-column>
-      <el-table-column label="竞价数" align="center" prop="bidCount" min-width="120">
+      <el-table-column label="竞价数" align="center" prop="bidCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.bidCount) }}
         </template>
       </el-table-column>
-      <el-table-column label="获胜数" align="center" prop="winCount" min-width="120">
+      <el-table-column label="获胜数" align="center" prop="winCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.winCount) }}
         </template>
       </el-table-column>
-      <el-table-column label="获胜率" align="center" prop="winRate" min-width="100">
+      <el-table-column label="获胜率" align="center" prop="winRate" min-width="100" sortable>
         <template #default="scope">
           {{ calculateWinRate(scope.row.bidCount, scope.row.winCount) }}%
         </template>
       </el-table-column>
-      <el-table-column label="成本(元)" align="center" prop="cost" min-width="120">
+      <el-table-column label="成本(元)" align="center" prop="cost" min-width="120" sortable>
         <template #default="scope">
           {{ formatMoney(scope.row.cost) }}
         </template>
