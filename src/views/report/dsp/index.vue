@@ -118,7 +118,7 @@
           {{ calculateWinRate(scope.row.bidCount, scope.row.winCount) }}%
         </template>
       </el-table-column>
-      <el-table-column label="成本(元)" align="center" prop="cost" min-width="120" sortable>
+      <el-table-column label="1CPM 成本(元)" align="center" prop="cost" min-width="140" sortable>
         <template #default="scope">
           {{ formatMoney(scope.row.cost) }}
         </template>
