@@ -88,6 +88,11 @@
       </el-table-column>
       <el-table-column label="DSP名称" align="center" prop="dspName" min-width="150" sortable />
       <el-table-column label="DSP编码" align="center" prop="dspCode" min-width="120" sortable />
+      <el-table-column label="请求数" align="center" prop="reqCount" min-width="120" sortable>
+        <template #default="scope">
+          {{ formatNumber(scope.row.reqCount) }}
+        </template>
+      </el-table-column>
       <el-table-column label="曝光量" align="center" prop="impCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.impCount) }}
