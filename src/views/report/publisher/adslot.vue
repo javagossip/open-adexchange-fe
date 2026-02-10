@@ -72,9 +72,29 @@
     </el-row>
 
     <el-table v-loading="loading" :data="reportList" border stripe>
+      <el-table-column label="统计时间" align="center" prop="statDate" min-width="140" sortable>
+        <template #default="scope">
+          {{ formatStatDate(scope.row.statDate) }}
+        </template>
+      </el-table-column>
       <el-table-column label="广告位编码" align="center" prop="adSlotId" min-width="150" sortable />
       <el-table-column label="广告位名称" align="center" prop="adSlotName" min-width="150" sortable />
       <el-table-column label="站点/APP" align="center" prop="siteName" min-width="120" sortable />
+      <el-table-column label="请求数" align="center" prop="reqCount" min-width="120" sortable>
+        <template #default="scope">
+          {{ formatNumber(scope.row.reqCount) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="竞价数" align="center" prop="bidCount" min-width="120" sortable>
+        <template #default="scope">
+          {{ formatNumber(scope.row.bidCount) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="中标数" align="center" prop="winCount" min-width="120" sortable>
+        <template #default="scope">
+          {{ formatNumber(scope.row.winCount) }}
+        </template>
+      </el-table-column>
       <el-table-column label="曝光量" align="center" prop="impCount" min-width="120" sortable>
         <template #default="scope">
           {{ formatNumber(scope.row.impCount) }}
@@ -146,6 +166,19 @@ const data = reactive({
 });
 
 const { queryParams } = toRefs(data);
+
+/** 格式化统计时间：YYYYMMDDHH -> YYYY-MM-DD HH:00，YYYYMMDD -> YYYY-MM-DD */
+function formatStatDate(val) {
+  if (val === null || val === undefined || val === '') return '--';
+  const s = String(val);
+  if (s.length === 10) {
+    return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)} ${s.slice(8, 10)}:00`;
+  }
+  if (s.length === 8) {
+    return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+  }
+  return s;
+}
 
 /** 格式化数字 */
 function formatNumber(num) {

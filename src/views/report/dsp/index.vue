@@ -81,6 +81,11 @@
     </el-row>
 
     <el-table v-loading="loading" :data="reportList" border stripe>
+      <el-table-column label="统计时间" align="center" prop="statDate" min-width="140" sortable>
+        <template #default="scope">
+          {{ formatStatDate(scope.row.statDate) }}
+        </template>
+      </el-table-column>
       <el-table-column label="DSP名称" align="center" prop="dspName" min-width="150" sortable />
       <el-table-column label="DSP编码" align="center" prop="dspCode" min-width="120" sortable />
       <el-table-column label="曝光量" align="center" prop="impCount" min-width="120" sortable>
@@ -157,6 +162,19 @@ const data = reactive({
 });
 
 const { queryParams } = toRefs(data);
+
+/** 格式化统计时间：YYYYMMDDHH -> YYYY-MM-DD HH:00，YYYYMMDD -> YYYY-MM-DD */
+function formatStatDate(val) {
+  if (val === null || val === undefined || val === '') return '--';
+  const s = String(val);
+  if (s.length === 10) {
+    return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)} ${s.slice(8, 10)}:00`;
+  }
+  if (s.length === 8) {
+    return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+  }
+  return s;
+}
 
 /** 格式化数字 */
 function formatNumber(num) {
