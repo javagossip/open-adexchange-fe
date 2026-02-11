@@ -111,12 +111,12 @@
       </el-table-column>
       <el-table-column label="1CPM 媒体收益(元)" align="center" prop="revenue" min-width="160" sortable>
         <template #default="scope">
-          {{ formatMoney(scope.row.revenue) }}
+          {{ scope.row.revenue }}
         </template>
       </el-table-column>
       <el-table-column label="1CPM ADX平台收益(元)" align="center" prop="adxRevenue" min-width="190" sortable>
         <template #default="scope">
-          {{ formatMoney(scope.row.adxRevenue) }}
+          {{ scope.row.adxRevenue }}
         </template>
       </el-table-column>
     </el-table>
