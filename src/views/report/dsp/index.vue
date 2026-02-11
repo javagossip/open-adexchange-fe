@@ -125,7 +125,7 @@
       </el-table-column>
       <el-table-column label="1CPM 成本(元)" align="center" prop="cost" min-width="140" sortable>
         <template #default="scope">
-          {{ formatMoney(scope.row.cost) }}
+          {{ scope.row.cost }}
         </template>
       </el-table-column>
     </el-table>
