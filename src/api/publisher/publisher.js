@@ -59,3 +59,12 @@ export function disablePublisher(id) {
   });
 }
 
+// 搜索发布商, 按名称模糊搜索
+export function searchPublisher(searchKey, size = 20) {
+  return request({
+    url: '/v1/publishers/search',
+    method: 'get',
+    params: { searchKey, size },
+  });
+}
+
