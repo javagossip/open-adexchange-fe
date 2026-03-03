@@ -145,19 +145,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="调试模式" align="center" prop="debug" width="100">
-        <template #default="scope">
-          <el-tag :type="scope.row.debug ? 'warning' : 'info'">
-            {{ scope.row.debug ? '开启' : '关闭' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createdAt" width="180">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.createdAt) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="调试开关" align="center" width="140">
+      <el-table-column label="调试模式" align="center" prop="debug" width="140">
         <template #default="scope">
           <el-switch
             v-model="scope.row.debug"
@@ -167,6 +155,11 @@
             inactive-text="关闭"
             @change="(val) => handleDebugToggle(scope.row, val)"
           />
+        </template>
+      </el-table-column>
+      <el-table-column label="创建时间" align="center" prop="createdAt" width="180">
+        <template #default="scope">
+          <span>{{ parseTime(scope.row.createdAt) }}</span>
         </template>
       </el-table-column>
       <el-table-column
