@@ -145,6 +145,13 @@
           </el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="调试模式" align="center" prop="debug" width="100">
+        <template #default="scope">
+          <el-tag :type="scope.row.debug ? 'warning' : 'info'">
+            {{ scope.row.debug ? '开启' : '关闭' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createdAt" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.createdAt) }}</span>
@@ -291,6 +298,16 @@
             <el-radio :value="1">使用中</el-radio>
             <el-radio :value="0">禁用</el-radio>
           </el-radio-group>
+        </el-form-item>
+        <el-form-item label="调试模式" prop="debug">
+          <el-switch
+            v-model="form.debug"
+            active-text="开启"
+            inactive-text="关闭"
+          />
+          <span class="form-tip" style="margin-left: 8px; color: #909399; font-size: 12px">
+            开启后将返回各环节详细日志，便于调试
+          </span>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -479,6 +496,7 @@ function reset() {
     demoUrl: undefined,
     floorPrice: undefined,
     status: 1,
+    debug: false,
   };
   proxy.resetForm('siteAdPlacementRef');
 }
