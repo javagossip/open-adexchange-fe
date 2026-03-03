@@ -59,6 +59,22 @@ export function disableSiteAdPlacement(id) {
   });
 }
 
+// 启用媒体广告位调试模式
+export function enableDebugMode(id) {
+  return request({
+    url: '/v1/site-ad-placements/' + id + '/debug/enable',
+    method: 'put',
+  });
+}
+
+// 禁用媒体广告位调试模式
+export function disableDebugMode(id) {
+  return request({
+    url: '/v1/site-ad-placements/' + id + '/debug/disable',
+    method: 'put',
+  });
+}
+
 // 搜索媒体广告位, 按名称模糊搜索
 export function searchSiteAdPlacement(searchKey, size = 20) {
   return request({

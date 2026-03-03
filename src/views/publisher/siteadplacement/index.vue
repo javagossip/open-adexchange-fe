@@ -157,6 +157,18 @@
           <span>{{ parseTime(scope.row.createdAt) }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="调试开关" align="center" width="140">
+        <template #default="scope">
+          <el-switch
+            v-model="scope.row.debug"
+            :loading="debugLoading"
+            :disabled="debugLoading"
+            active-text="开启"
+            inactive-text="关闭"
+            @change="(val) => handleDebugToggle(scope.row, val)"
+          />
+        </template>
+      </el-table-column>
       <el-table-column
         label="操作"
         align="center"
@@ -329,6 +341,8 @@ import {
   updateSiteAdPlacement,
   enableSiteAdPlacement,
   disableSiteAdPlacement,
+  enableDebugMode,
+  disableDebugMode,
 } from '@/api/publisher/siteadplacement';
 import { listSite } from '@/api/publisher/site';
 import { listAdPlacement } from '@/api/publisher/adplacement';
@@ -349,6 +363,7 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const title = ref('');
+const debugLoading = ref(false);
 
 const data = reactive({
   form: {},
@@ -605,6 +620,27 @@ function handleDisable(row) {
       proxy.$modal.msgSuccess('禁用成功');
     })
     .catch(() => {});
+}
+
+/** 列表中调试模式开关切换 */
+function handleDebugToggle(row, val) {
+  if (!row || !row.id) {
+    return;
+  }
+  debugLoading.value = true;
+  const api = val ? enableDebugMode : disableDebugMode;
+  api(row.id)
+    .then(() => {
+      proxy.$modal.msgSuccess(val ? '已开启调试模式' : '已关闭调试模式');
+    })
+    .catch(() => {
+      // 接口失败则回退开关状态
+      row.debug = !val;
+      proxy.$modal.msgError('操作失败，请稍后重试');
+    })
+    .finally(() => {
+      debugLoading.value = false;
+    });
 }
 
 // 初始化
