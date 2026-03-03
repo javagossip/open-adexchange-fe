@@ -147,14 +147,15 @@
       </el-table-column>
       <el-table-column label="调试模式" align="center" prop="debug" width="140">
         <template #default="scope">
-          <el-switch
-            v-model="scope.row.debug"
-            :loading="debugLoading"
-            :disabled="debugLoading"
-            active-text="开启"
-            inactive-text="关闭"
-            @change="(val) => handleDebugToggle(scope.row, val)"
-          />
+          <div style="display: inline-flex; align-items: center; gap: 8px">
+            <el-switch
+              v-model="scope.row.debug"
+              :loading="debugLoading"
+              :disabled="debugLoading"
+              @change="(val) => handleDebugToggle(scope.row, val)"
+            />
+            <span>{{ scope.row.debug ? '开启' : '关闭' }}</span>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createdAt" width="180">
@@ -305,13 +306,9 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="调试模式" prop="debug">
-          <el-switch
-            v-model="form.debug"
-            active-text="开启"
-            inactive-text="关闭"
-          />
+          <el-switch v-model="form.debug" />
           <span class="form-tip" style="margin-left: 8px; color: #909399; font-size: 12px">
-            开启后将返回各环节详细日志，便于调试
+            {{ form.debug ? '当前：开启，' : '当前：关闭，' }}开启后将返回各环节详细日志，便于调试
           </span>
         </el-form-item>
       </el-form>
