@@ -347,6 +347,30 @@
                       </el-input>
                     </el-form-item>
                   </el-col>
+                  <el-col :span="12">
+                    <el-form-item label="OAID" prop="device.oaid">
+                      <el-input v-model="form.device.oaid" placeholder="OAID（Android 广告标识）">
+                        <template #append>
+                          <el-button @click="generateOaid">
+                            <el-icon><Refresh /></el-icon>
+                          </el-button>
+                        </template>
+                      </el-input>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+                <el-row :gutter="16">
+                  <el-col :span="12">
+                    <el-form-item label="OAID MD5" prop="device.oaidmd5">
+                      <el-input v-model="form.device.oaidmd5" placeholder="OAID 的 MD5 值">
+                        <template #append>
+                          <el-button @click="generateOaidmd5">
+                            <el-icon><Refresh /></el-icon>
+                          </el-button>
+                        </template>
+                      </el-input>
+                    </el-form-item>
+                  </el-col>
                 </el-row>
               </el-collapse-item>
 
@@ -818,6 +842,8 @@ const form = reactive({
     mac: '',
     macmd5: '',
     adid: '',
+    oaid: '',
+    oaidmd5: '',
     h: undefined,
     w: undefined,
     geo: {
@@ -1064,6 +1090,15 @@ function generateAdidValue() {
   return randomHex(16);
 }
 
+// 生成 OAID（使用 UUID 形式，更接近常见实现）
+function generateOaidValue() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 // 设备标识 - 一键生成
 function generateDeviceIdsAll() {
   const ifa = generateIfaValue();
@@ -1073,6 +1108,8 @@ function generateDeviceIdsAll() {
   form.device.mac = generateMacValue();
   form.device.macmd5 = randomHex(32);
   form.device.adid = generateAdidValue();
+  form.device.oaid = generateOaidValue();
+  form.device.oaidmd5 = randomHex(32);
   ElMessage.success('已生成设备标识信息');
 }
 
@@ -1109,6 +1146,22 @@ function generateMacmd5() {
 function generateAdid() {
   form.device.adid = generateAdidValue();
   ElMessage.success('已生成 Android ID');
+}
+
+// 单字段生成：OAID
+function generateOaid() {
+  form.device.oaid = generateOaidValue();
+  // 如果 oaidmd5 为空，则默认一并生成
+  if (!form.device.oaidmd5) {
+    form.device.oaidmd5 = randomHex(32);
+  }
+  ElMessage.success('已生成 OAID');
+}
+
+// 单字段生成：OAID MD5
+function generateOaidmd5() {
+  form.device.oaidmd5 = randomHex(32);
+  ElMessage.success('已生成 OAID MD5');
 }
 
 // App 示例数据 - 用于生成示例
