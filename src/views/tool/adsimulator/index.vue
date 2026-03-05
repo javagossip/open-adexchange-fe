@@ -1306,6 +1306,8 @@ function buildRequestData() {
   if (device.mac) data.device.mac = device.mac;
   if (device.macmd5) data.device.macmd5 = device.macmd5;
   if (device.adid) data.device.adid = device.adid;
+  if (device.oaid) data.device.oaid = device.oaid;
+  if (device.oaidmd5) data.device.oaidmd5 = device.oaidmd5;
   if (device.h) data.device.h = device.h;
   if (device.w) data.device.w = device.w;
 
